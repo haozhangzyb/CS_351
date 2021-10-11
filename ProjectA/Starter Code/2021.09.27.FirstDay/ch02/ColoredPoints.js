@@ -1,10 +1,5 @@
-//3456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_
-// (JT: why the numbers? counts columns, helps me keep 80-char-wide listings)
-//
-// ColoredPoint.js (c) 2012 matsuda  MODIFIED for EECS 351-1, 
-//									Northwestern Univ. Jack Tumblin
-//
-// Vertex shader program----------------------------------
+// ColoredPoint.js (c) 2012 matsuda
+// Vertex shader program
 var VSHADER_SOURCE =
   'attribute vec4 a_Position;\n' +
   'void main() {\n' +
@@ -12,7 +7,7 @@ var VSHADER_SOURCE =
   '  gl_PointSize = 10.0;\n' +
   '}\n';
 
-// Fragment shader program--------------------------------
+// Fragment shader program
 var FSHADER_SOURCE =
   'precision mediump float;\n' +
   'uniform vec4 u_FragColor;\n' +  // uniform変数
@@ -21,7 +16,6 @@ var FSHADER_SOURCE =
   '}\n';
 
 function main() {
-//==============================================================================
   // Retrieve <canvas> element
   var canvas = document.getElementById('webgl');
 
@@ -62,13 +56,9 @@ function main() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-// Additional global variables:
-//-----------------------------
 var g_points = [];  // The array for the position of a mouse press
 var g_colors = [];  // The array to store the color of a point
-
 function click(ev, gl, canvas, a_Position, u_FragColor) {
-//==============================================================================
   var x = ev.clientX; // x coordinate of a mouse pointer
   var y = ev.clientY; // y coordinate of a mouse pointer
   var rect = ev.target.getBoundingClientRect();
