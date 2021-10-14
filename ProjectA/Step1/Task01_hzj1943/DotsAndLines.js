@@ -231,13 +231,13 @@ function initVertexBuffers(gl) {
       vertices[index] -= 0.3;
     }
     
-    // //move vertices in the front a bit
-    // if ((index + 1) % 4 == 3) {
-    //   if (vertices[index] !== 0) {
-    //     vertices[index - 2] -= 0.3;
-    //     vertices[index - 1] -= 0.3;
-    //   }
-    // }
+    //move vertices in the front a bit so it looks like 3D
+    if ((index + 1) % 4 == 3) {
+      if (vertices[index] !== 0) {
+        vertices[index - 2] -= 0.3;
+        vertices[index - 1] -= 0.3;
+      }
+    }
   }
 
   // Then in the Graphics hardware, create a vertex buffer object (VBO)
