@@ -60,6 +60,7 @@ var g_vertsMax = 0; // number of vertices held in the VBO
 var g_modelMatrix = new Matrix4(); // Construct 4x4 matrix; contents get sent
 // to the GPU/Shaders as a 'uniform' var.
 var g_modelMatLoc; // that uniform's location in the GPU
+var u_ModelMatrix;
 
 //------------For Animation---------------------------------------------
 var g_isRun = true; // run/stop for animation; used in tick().
@@ -172,6 +173,7 @@ function main() {
     console.log("Failed to get the storage location of u_ModelMatrix");
     return;
   }
+
   /* REPLACED by global var 'g_ModelMatrix' (declared, constructed at top)
   // Create a local version of our model matrix in JavaScript 
   var modelMatrix = new Matrix4();
@@ -311,19 +313,19 @@ function initVertexBuffer() {
 
 	// Triangle nodes
 	// Face 0: (left side)
-	0.0,     0.0,     sq2/2,     1.0,     1.0,     1.0,     1.0, // Node 0'
+	0.0,     0.0,     sq2/2,     1.0,     0.5,     0.5,     1.0, // Node 0'
 	c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
 	0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
 	// Face 1: (right side)
-	0.0,     0.0,     sq2/2,     1.0,     1.0,     1.0,     1.0, // Node 0'
+	0.0,     0.0,     sq2/2,     1.0,     0.5,     0.5,     1.0, // Node 0'
 	0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
 	-c30,   -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
 	// Face 2: (lower side)
-	0.0,     0.0,     sq2/2,     1.0,     1.0,     1.0,     1.0, // Node 0'
+	0.0,     0.0,     sq2/2,     1.0,     0.5,     0.5,     1.0, // Node 0'
 	-c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
 	c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
 	// Face 3: (base side)
-	-c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3 
+	-c30,	-0.5,     0.0,     1.0,     0.5,     0.5,     0.0, // Node 3 
 	0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
 	c30,	-0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
   ]);
@@ -415,31 +417,36 @@ function drawAll() {
   // console.log("clear value:", clrColr);
 
   // Draw Spinning Tetrahedron
-  DrawTetra();
-  // Draw the 2-triangle rigid 3D part
-  //DrawWedge();
+  var Tetra_g_modelMatrix = new Matrix4();
+  var Tetra_u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
+  pushMatrix(Tetra_g_modelMatrix);
+  DrawTetra(Tetra_g_modelMatrix, Tetra_u_ModelMatrix);
 
-  // save for future use of projA
-  DrawPart1();
+  // Draw the 2-triangle rigid 3D part
+  DrawWedge();
+
+  DrawPart1(Tetra_g_modelMatrix, Tetra_u_ModelMatrix);    
+
   DrawPart2();
 }
 
-function DrawTetra() {
+function DrawTetra(Tetra_g_modelMatrix, Tetra_u_ModelMatrix) {
 	//-------Draw Spinning Tetrahedron
-	g_modelMatrix.setTranslate(-0.4, -0.4, 0.0); // 'set' means DISCARD old matrix,
+	Tetra_g_modelMatrix.setTranslate(-0.4, -0.4, 0.0); // 'set' means DISCARD old matrix,
 	// (drawing axes centered in CVV), and then make new
 	// drawing axes moved to the lower-left corner of CVV.
-	g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+	Tetra_g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
 	// to match WebGL display canvas.
-	g_modelMatrix.scale(0.5, 0.5, 0.5);
+	Tetra_g_modelMatrix.scale(0.5, 0.5, 0.5);
 	// if you DON'T scale, tetra goes outside the CVV; clipped!
-	g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
-	g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+	Tetra_g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
+	Tetra_g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+  // Tetra_g_modelMatrix.rotate(g_angle02, 0, 0, 1); // Make new drawing axes that
 
 	// DRAW TETRA:  Use this matrix to transform & draw
 	//						the first set of vertices stored in our VBO:
 	// Pass our current matrix to the vertex shaders:
-	gl.uniformMatrix4fv(g_modelMatLoc, false, g_modelMatrix.elements);
+	gl.uniformMatrix4fv(Tetra_u_ModelMatrix, false, Tetra_g_modelMatrix.elements);
 	// Draw triangles: start at vertex 0 and draw 12 vertices
 	gl.drawArrays(gl.TRIANGLES, 0, 12);
 }
@@ -493,29 +500,43 @@ function DrawWedge() {
   gl.drawArrays(gl.TRIANGLES, 6, 6);
 }
 
-function DrawPart1() {
-	//-------Draw Spinning Tetrahedron
-	g_modelMatrix.setTranslate(-0.4, -0.4, 0.0); // 'set' means DISCARD old matrix,
-	// (drawing axes centered in CVV), and then make new
-	// drawing axes moved to the lower-left corner of CVV.
-	g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
-	// to match WebGL display canvas.
-	g_modelMatrix.scale(0.3, 0.3, 0.3);
-	// if you DON'T scale, tetra goes outside the CVV; clipped!
-	g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
-	g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+function DrawPart1(Tetra_g_modelMatrix, Tetra_u_ModelMatrix, x, y, z) {
+  var c30 = Math.sqrt(0.75); // == cos(30deg) == sqrt(3) / 2
+  var sq2 = Math.sqrt(2.0);
+  var x = [c30, 0.0, -c30];
+  var y = [-0.5, 1.0, -0.5];
+  var z = [0.0, 0.0, 0.0];
+  
+  pushMatrix(Tetra_g_modelMatrix);
+  for (var i = 0; i < 3; i++) {
+    Tetra_g_modelMatrix = popMatrix();
+    pushMatrix(Tetra_g_modelMatrix);
+    //-------Draw Spinning Tetrahedron
+    // Tetra_g_modelMatrix.translate(x[0], y[0], z[0]); // 'set' means DISCARD old matrix,
+    Tetra_g_modelMatrix.translate(x[i], y[i], z[i]); // 'set' means DISCARD old matrix,
+    // (drawing axes centered in CVV), and then make new
+    // drawing axes moved to the lower-left corner of CVV.
+    //g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+    // to match WebGL display canvas.
+    Tetra_g_modelMatrix.scale(0.2, 0.2, 0.2);
+    // if you DON'T scale, tetra goes outside the CVV; clipped!
+    // g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
+    // g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+    Tetra_g_modelMatrix.rotate(g_angle02, 0, 0, 1); // Make new drawing axes that
+  
+    // DRAW TETRA:  Use this matrix to transform & draw
+    //						the first set of vertices stored in our VBO:
+    // Pass our current matrix to the vertex shaders:
+    gl.uniformMatrix4fv(Tetra_u_ModelMatrix, false, Tetra_g_modelMatrix.elements);
+    // Draw triangles: start at vertex 0 and draw 12 vertices
+    gl.drawArrays(gl.TRIANGLES, 12, 36);
+  }
 
-	// DRAW TETRA:  Use this matrix to transform & draw
-	//						the first set of vertices stored in our VBO:
-	// Pass our current matrix to the vertex shaders:
-	gl.uniformMatrix4fv(g_modelMatLoc, false, g_modelMatrix.elements);
-	// Draw triangles: start at vertex 0 and draw 12 vertices
-	gl.drawArrays(gl.TRIANGLES, 12, 36);
 }
 
 function DrawPart2() {
 	// NEXT, create different drawing axes, and...
-	g_modelMatrix.setTranslate(0.4, 0.4, 0.0); // 'set' means DISCARD old matrix,
+	g_modelMatrix.setTranslate(0.5, -0.4, 0.0); // 'set' means DISCARD old matrix,
 	// (drawing axes centered in CVV), and then make new
 	// drawing axes moved to the lower-left corner of CVV.
 	g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
@@ -578,15 +599,15 @@ function animate() {
   //  if(angle >  120.0 && g_angle01Rate > 0) g_angle01Rate = -g_angle01Rate;
   //  if(angle <  -85.0 && g_angle01Rate < 0) g_angle01Rate = -g_angle01Rate;
 
-//   g_angle01 = g_angle01 + (g_angle01Rate * elapsed) / 1000.0;
-//   if (g_angle01 > 180.0) g_angle01 = g_angle01 - 360.0;
-//   if (g_angle01 < -180.0) g_angle01 = g_angle01 + 360.0;
+  g_angle01 = g_angle01 + (g_angle01Rate * elapsed) / 1000.0;
+  if (g_angle01 > 180.0) g_angle01 = g_angle01 - 360.0;
+  if (g_angle01 < -180.0) g_angle01 = g_angle01 + 360.0;
 
   g_angle02 = g_angle02 + (g_angle02Rate * elapsed) / 1000.0;
   if (g_angle02 > 180.0) g_angle02 = g_angle02 - 360.0;
   if (g_angle02 < -180.0) g_angle02 = g_angle02 + 360.0;
 
-  if (g_angle02 > 45.0 && g_angle02Rate > 0) g_angle02Rate *= -1.0;
+  if (g_angle02 > 30.0 && g_angle02Rate > 0) g_angle02Rate *= -1.0;
   if (g_angle02 < 0.0 && g_angle02Rate < 0) g_angle02Rate *= -1.0;
 }
 
