@@ -77,6 +77,14 @@ var g_angle02Rate = 40.0; // rotation speed, in degrees/second
 var g_angle03 = 0; // initial rotation angle
 var g_angle03Rate = 200.0; // rotation speed, in degrees/second
 
+var g_angle04 = 0; // initial rotation angle
+var g_angle04Rate = 300.0; // rotation speed, in degrees/second
+
+var rocketTiltAngle = 0;
+var rocketTiltRate = 30;
+var rocketTiltAngleStart = -20.0;
+var rocketTiltAngleStop = 0.0;
+
 //------------For mouse click-and-drag: -------------------------------
 var g_isDrag = false; // mouse-drag: true when user holds down mouse button
 var g_xMclik = 0.0; // last mouse button-down position (in CVV coords)
@@ -206,8 +214,7 @@ function main() {
     // 				and replace it's internal HTML commands (if any) with some
     //				on-screen text that reports our current angle value:
     //		--HINT: don't confuse 'getElementByID() and 'getElementById()
-    document.getElementById("CurAngleDisplay").innerHTML =
-      "g_angle01= " + g_angle01.toFixed(g_digits);
+
     // Also display our current mouse-dragging state:
     document.getElementById("Mouse").innerHTML =
       "Mouse Drag totals (CVV coords):\t" +
@@ -238,6 +245,8 @@ function initVertexBuffer() {
      0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2 (base: +y axis;  grn)
     -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
 
+
+    0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0' (apex, +z axis;  white)
     c30, -0.5, -4.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1' (base: lower rt; red)
      0.0,  1.0, -4.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2' (base: +y axis;  grn)
     -c30, -0.5, -4.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3' (base:lower lft; blue)
@@ -284,6 +293,23 @@ function initVertexBuffer() {
     c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1 (base: lower rt; red)
     -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
     -c30, -0.5, -4.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3' (base:lower lft; blue)
+
+
+    0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0'
+    c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+    0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+    // Face 1: (right side)
+    0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0'
+    0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+    -c30,   -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+    // Face 2: (lower side)
+    0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0'
+    -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+    c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+    // Face 3: (base side)
+    -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3 
+    0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+    c30,	-0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
 
 
 
@@ -510,12 +536,11 @@ function DrawRocketHeadAndBody(Tetra_g_modelMatrix, Tetra_u_ModelMatrix) {
 	// drawing axes moved to the lower-left corner of CVV.
 	Tetra_g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
 	// to match WebGL display canvas.
-	Tetra_g_modelMatrix.scale(0.3, 0.3, 0.3);
+	Tetra_g_modelMatrix.scale(0.15, 0.15, 0.15);
 	// if you DON'T scale, tetra goes outside the CVV; clipped!
   Tetra_g_modelMatrix.rotate(-90, 1, 0, 0)
-	// Tetra_g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
-	// Tetra_g_modelMatrix.rotate(g_angle01, 1, 0, 0); // Make new drawing axes that
   Tetra_g_modelMatrix.rotate(g_angle01, 0, 0, 1); // Make new drawing axes that
+  Tetra_g_modelMatrix.rotate(rocketTiltAngle, 0, 1, 0);
 
 	// DRAW TETRA:  Use this matrix to transform & draw
 	//						the first set of vertices stored in our VBO:
@@ -551,7 +576,7 @@ function DrawRocketEngine(Tetra_g_modelMatrix, Tetra_u_ModelMatrix, x, y, z) {
     // if you DON'T scale, tetra goes outside the CVV; clipped!
     // g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
     // g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
-    Tetra_g_modelMatrix.rotate(g_angle03, 0, 0, 1); // Make new drawing axes that
+    Tetra_g_modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
     Tetra_g_modelMatrix.rotate(90, 1, 0, 0);
   
     // DRAW TETRA:  Use this matrix to transform & draw
@@ -559,18 +584,18 @@ function DrawRocketEngine(Tetra_g_modelMatrix, Tetra_u_ModelMatrix, x, y, z) {
     // Pass our current matrix to the vertex shaders:
     gl.uniformMatrix4fv(Tetra_u_ModelMatrix, false, Tetra_g_modelMatrix.elements);
     // Draw triangles: start at vertex 0 and draw 12 vertices
-    gl.drawArrays(gl.TRIANGLES, 30, 36);
-    gl.drawArrays(gl.TRIANGLES, 66, 12);
+    gl.drawArrays(gl.TRIANGLES, 42, 36);
+    gl.drawArrays(gl.TRIANGLES, 78, 12);
 
     
     Tetra_g_modelMatrix.translate(x1[0], y1[0], z1[0]);
-    Tetra_g_modelMatrix.scale(0.4, 0.4, 0.4);
+    Tetra_g_modelMatrix.scale(1, 1, 1);
+    Tetra_g_modelMatrix.rotate(90, 1, 0, 0);
+    Tetra_g_modelMatrix.rotate(g_angle04, 0, 0, 1);
     gl.uniformMatrix4fv(Tetra_u_ModelMatrix, false, Tetra_g_modelMatrix.elements);
-    gl.drawArrays(gl.TRIANGLES, 30, 36);
-    gl.drawArrays(gl.TRIANGLES, 66, 12);
-    
-
-    
+    gl.drawArrays(gl.TRIANGLES, 0, 12);
+    gl.drawArrays(gl.TRIANGLES, 30, 12);
+        
   }
 
 }
@@ -623,8 +648,8 @@ function DrawWindmill() {
   //						the different set of vertices stored in our VBO:
   gl.uniformMatrix4fv(g_modelMatLoc, false, g_modelMatrix.elements);
   // Draw only the last 2 triangles: start at vertex 6, draw 6 vertices
-  gl.drawArrays(gl.TRIANGLES, 30, 36);
-  gl.drawArrays(gl.TRIANGLES, 66, 18);
+  gl.drawArrays(gl.TRIANGLES, 42, 36);
+  gl.drawArrays(gl.TRIANGLES, 78, 18);
 }
 
 
@@ -657,6 +682,15 @@ function animate() {
 
   g_angle03 = g_angle03 + (g_angle03Rate * elapsed) / 1000.0;
 
+  g_angle04 = g_angle04 + (g_angle04Rate * elapsed) / 1000.0;
+
+  rocketTiltAngle = rocketTiltAngle + (rocketTiltRate * elapsed) / 1000.0
+  if (rocketTiltAngle > 180.0) rocketTiltAngle = rocketTiltAngle - 360.0;
+  if (rocketTiltAngle < -180.0) rocketTiltAngle = rocketTiltAngle + 360.0;
+
+  if (rocketTiltAngle > rocketTiltAngleStop && rocketTiltRate > 0) rocketTiltRate *= -1.0;
+  if (rocketTiltAngle < rocketTiltAngleStart && rocketTiltRate < 0) rocketTiltRate *= -1.0;
+
   
   rocketLoaction[1] = rocketLoaction[1]  + (rocketRate * elapsed) / 35000.0;
   if ( rocketLoaction[1] > 1.9)  rocketLoaction[1] = -1.8;
@@ -666,19 +700,46 @@ function animate() {
 
 //==================HTML Button Callbacks======================
 
-function angleSubmit() {
+function StartAngleSubmit() {
   // Called when user presses 'Submit' button on our webpage
   //		HOW? Look in HTML file (e.g. ControlMulti.html) to find
   //	the HTML 'input' element with id='usrAngle'.  Within that
   //	element you'll find a 'button' element that calls this fcn.
 
   // Read HTML edit-box contents:
-  var UsrTxt = document.getElementById("usrAngle").value;
+  var UsrTxt = document.getElementById("usrStartAngle").value;
   // Display what we read from the edit-box: use it to fill up
   // the HTML 'div' element with id='editBoxOut':
-  document.getElementById("EditBoxOut").innerHTML = "You Typed: " + UsrTxt;
-  console.log("angleSubmit: UsrTxt:", UsrTxt); // print in console, and
-  g_angle01 = parseFloat(UsrTxt); // convert string to float number
+  // document.getElementById("EditBoxOut").innerHTML = "You Typed: " + UsrTxt;
+  // console.log("angleSubmit: UsrTxt:", UsrTxt); // print in console, and
+  rocketTiltAngleStart = parseFloat(UsrTxt); // convert string to float number
+
+}
+
+function StopAngleSubmit() {
+  // Called when user presses 'Submit' button on our webpage
+  //		HOW? Look in HTML file (e.g. ControlMulti.html) to find
+  //	the HTML 'input' element with id='usrAngle'.  Within that
+  //	element you'll find a 'button' element that calls this fcn.
+
+  // Read HTML edit-box contents:
+  var UsrTxt = document.getElementById("usrStopAngle").value;
+  // Display what we read from the edit-box: use it to fill up
+  // the HTML 'div' element with id='editBoxOut':
+  // document.getElementById("EditBoxOut").innerHTML = "You Typed: " + UsrTxt;
+  // console.log("angleSubmit: UsrTxt:", UsrTxt); // print in console, and
+  rocketTiltAngleStop = parseFloat(UsrTxt); // convert string to float number
+
+}
+
+function StopTiltSubmit() {
+  if (rocketTiltRate > 0){
+    rocketTiltRate = 0;
+    rocketTiltAngle = 0;
+  }
+  else{
+    rocketTiltRate = 30.0;
+  }
 }
 
 function clearDrag() {
@@ -687,29 +748,7 @@ function clearDrag() {
   g_yMdragTot = 0.0;
 }
 
-function spinUp() {
-  // Called when user presses the 'Spin >>' button on our webpage.
-  // ?HOW? Look in the HTML file (e.g. ControlMulti.html) to find
-  // the HTML 'button' element with onclick='spinUp()'.
-  g_angle01Rate += 25;
-}
 
-function spinDown() {
-  // Called when user presses the 'Spin <<' button
-  g_angle01Rate -= 25;
-}
-
-function runStop() {
-  // Called when user presses the 'Run/Stop' button
-  if (g_angle01Rate * g_angle01Rate > 1) {
-    // if nonzero rate,
-    myTmp = g_angle01Rate; // store the current rate,
-    g_angle01Rate = 0; // and set to zero.
-  } else {
-    // but if rate is zero,
-    g_angle01Rate = myTmp; // use the stored rate.
-  }
-}
 
 //===================Mouse and Keyboard event-handling Callbacks
 
@@ -978,4 +1017,23 @@ function RocketStop() {
     rocketRate = 20.0;
   }
   
+}
+
+function EngineStop() {
+  if (g_angle03Rate > 0){
+    g_angle03Rate = 0;
+  }
+  else{
+    g_angle03Rate = 200.0;
+  }
+}
+
+
+function ThrusterStop() {
+  if (g_angle04Rate > 0){
+    g_angle04Rate = 0;
+  }
+  else{
+    g_angle04Rate = 300.0;
+  }
 }

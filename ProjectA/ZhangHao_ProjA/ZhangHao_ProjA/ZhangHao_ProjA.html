@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>ControlMulti</title>
+    <title>Rocket and Windmill</title>
   </head>
 	<!--	Create the HTML5 'canvas' element in which we will run WebGL  -->
   <body onload="main()">
@@ -12,11 +12,23 @@
 		Drag mouse to rotate the windmill.
 	</p>
 	<p>
-		On the left is a rocket with three engines, and each engine has a small attachment.
-		click 'Stop Rocket' Button to stop it.
-		<button type="button" onclick="RocketStop()">Stop Rocket</button>
+		On the left is a rocket with three engines, and each engine has a thruster.<br>
+		Click 'Pause/Start' Button to pause/start it.<br>
+		<button type="button" onclick="RocketStop()">Pause/Start Rocket</button>
+		<button type="button" onclick="EngineStop()">Pause/Start Engines</button>
+		<button type="button" onclick="ThrusterStop()">Pause/Start Thrusters</button><br><br>
+		Type Rocket tilt Angle (-180 < startAngle < stopAngle < +180 deg): <br>
+		Start Angle:
+		<input id='usrStartAngle' placeholder="-20.0" size=10> 
+		<button type="button" onClick='StartAngleSubmit()'>Submit</button><br> 
+		Stop Angle:
+		<input id='usrStopAngle' placeholder="0.0" size=10> 
+		<button type="button" onClick='StopAngleSubmit()'>Submit</button><br>
+		Or pause/resume tilting:
+		<button type="button" onClick='StopTiltSubmit()'>pause/resume tilting</button><br>
+		<!-- <div id= EditBoxOut></div> -->
 	</p>	
-    <canvas id="webgl" width="700" height="700">
+    <canvas id="webgl" width="1000" height="1000">
     Please use a browser that supports "canvas"
     </canvas>
 	<p>
@@ -24,20 +36,12 @@
 		 (where? look inside main(), inside its 'tick()' function, where we
 		 display the 'current angle' value.
 	-->
-	<div id= CurAngleDisplay></div> 
+
 	<!-- Next, make a simple block of text 
 	-->
-	New Current Angle (-180 < x < +180 deg): 
-	<!-- Next, make an HTML 'input' box element, a text-box 10 chars wide where users
-		can type in text.  Give it an ID name so that our JavaScript program
-		(e.g. ControlMulti.js, loaded near the end of this file) can access this
-		HTML element by name in the 'tick' function.
-	--><input id='usrAngle' size=10> 
-		<button type="button" onClick='angleSubmit()'>Submit</button><BR> 
-		<div id= EditBoxOut></div>
+	
 	</p>
-	Open the JavaScript Console, please: <br>
-    	</t> (right-click-->'Inspect' or 'Inspect element'-->'Console' tab) <br>
+	
 
 <hr> <!-- Draw a horizontal-line separator------------->
 	Try keyboard & mouse click/drag inside the canvas, and:
@@ -57,15 +61,7 @@
 	-->
 		<div id='Mouse'> Mouse Drag totals (CVV coords) </div>
 			<button type="button" onClick='clearDrag()'>Clear</button>
-	<p>
-		<!--BUTTONS: commands below create HTML push-buttons with labels
-			Spin <<, runStop, and Spin >>.  
-		When users click the button, HTML calls JavaScript functions
-			"spinDown()", "runStop()" and "spinUp()"   -->
-      <button type="button" onclick="spinDown()">Spin << </button>
-	  <button type="button" onclick="runStop()">Run/Stop</button>
-      <button type="button" onclick="spinUp()">Spin >> </button>
-    </p>
+
 	<!--	Load in the JavaScript libraries supplied by our textbook 
 			(Matsuda et al., 2013 WebGL Programming Guide) that help us
 			with WebGL programming:
@@ -76,6 +72,6 @@
     <script src="../lib/cuon-matrix-quat03.js"></script>
 	<!--	Finally, load in our own JavaScript program file.
 	-->
-    <script src="ControlMulti.js"></script>
+    <script src="ZhangHao_ProjA.js"></script>
   </body>
 </html>
