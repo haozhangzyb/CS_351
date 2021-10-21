@@ -80,6 +80,7 @@ var g_angle03Rate = 200.0; // rotation speed, in degrees/second
 var g_angle04 = 0; // initial rotation angle
 var g_angle04Rate = 300.0; // rotation speed, in degrees/second
 
+var isRockTilt = true;
 var rocketTiltAngle = 0;
 var rocketTiltRate = 30;
 var rocketTiltAngleStart = -20.0;
@@ -684,12 +685,17 @@ function animate() {
 
   g_angle04 = g_angle04 + (g_angle04Rate * elapsed) / 1000.0;
 
-  rocketTiltAngle = rocketTiltAngle + (rocketTiltRate * elapsed) / 1000.0
-  if (rocketTiltAngle > 180.0) rocketTiltAngle = rocketTiltAngle - 360.0;
-  if (rocketTiltAngle < -180.0) rocketTiltAngle = rocketTiltAngle + 360.0;
+  if (isRockTilt) {
+    rocketTiltAngle = rocketTiltAngle + (rocketTiltRate * elapsed) / 1000.0
+    if (rocketTiltAngle > 180.0) rocketTiltAngle = rocketTiltAngle - 360.0;
+    if (rocketTiltAngle < -180.0) rocketTiltAngle = rocketTiltAngle + 360.0;
 
-  if (rocketTiltAngle > rocketTiltAngleStop && rocketTiltRate > 0) rocketTiltRate *= -1.0;
-  if (rocketTiltAngle < rocketTiltAngleStart && rocketTiltRate < 0) rocketTiltRate *= -1.0;
+    if (rocketTiltAngle > rocketTiltAngleStop && rocketTiltRate > 0) rocketTiltRate *= -1.0;
+    if (rocketTiltAngle < rocketTiltAngleStart && rocketTiltRate < 0) rocketTiltRate *= -1.0;
+  } else {
+    rocketTiltAngle = 0;
+  }
+  
 
   
   rocketLoaction[1] = rocketLoaction[1]  + (rocketRate * elapsed) / 35000.0;
@@ -733,12 +739,11 @@ function StopAngleSubmit() {
 }
 
 function StopTiltSubmit() {
-  if (rocketTiltRate > 0){
-    rocketTiltRate = 0;
-    rocketTiltAngle = 0;
+  if (isRockTilt){
+    isRockTilt = false;
   }
   else{
-    rocketTiltRate = 30.0;
+    isRockTilt = true;
   }
 }
 
