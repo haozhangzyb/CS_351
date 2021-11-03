@@ -52,7 +52,7 @@ var floatsPerVertex = 7; // # of Float32Array elements used for each vertex
 var u_shiver;
 var u_shiver_x = 1.0;
 var u_shiver_y = 0.0;
-var u_shiver_y_Rate = Math.PI;
+var u_shiver_y_Rate = Math.PI / 2;
 var FREQ_value = 0.1;
 
 function main() {
@@ -229,8 +229,8 @@ function initVertexBuffer(gl) {
   gl.enableVertexAttribArray(a_Color);
   // Enable assignment of vertex buffer object's position data
 
-  u_shiver = gl.getUniformLocation(gl.program, "u_shiver");
-  gl.uniform2f(u_shiver, u_shiver_x, u_shiver_y);
+  // u_shiver = gl.getUniformLocation(gl.program, "u_shiver");
+  // gl.uniform2f(u_shiver, u_shiver_x, u_shiver_y);
 //   console.log(u_shiver_y);
 
   var FREQ = gl.getUniformLocation(gl.program, "FREQ");
@@ -737,6 +737,10 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   ); // draw this many vertices.
   modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
   //===========================================================
+
+
+  u_shiver = gl.getUniformLocation(gl.program, "u_shiver");
+  gl.uniform2f(u_shiver, u_shiver_x, u_shiver_y);
 }
 
 // Last time that this function was called:  (used for animation timing)
