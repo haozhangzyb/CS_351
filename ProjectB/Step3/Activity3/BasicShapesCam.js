@@ -231,11 +231,10 @@ function initVertexBuffer(gl) {
 
   // u_shiver = gl.getUniformLocation(gl.program, "u_shiver");
   // gl.uniform2f(u_shiver, u_shiver_x, u_shiver_y);
-//   console.log(u_shiver_y);
+  //   console.log(u_shiver_y);
 
   var FREQ = gl.getUniformLocation(gl.program, "FREQ");
   gl.uniform1f(FREQ, FREQ_value);
-
 
   //--------------------------------DONE!
   // Unbind the buffer object
@@ -738,7 +737,6 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
   //===========================================================
 
-
   u_shiver = gl.getUniformLocation(gl.program, "u_shiver");
   gl.uniform2f(u_shiver, u_shiver_x, u_shiver_y);
 }
@@ -758,14 +756,13 @@ function animate(angle) {
   //  if(angle < -120.0 && ANGLE_STEP < 0) ANGLE_STEP = -ANGLE_STEP;
 
   var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
-  
-  u_shiver_y += u_shiver_y_Rate * elapsed / 1000.0;
-  if (u_shiver_y > 2 * Math.PI && u_shiver_y_Rate > 0) u_shiver_y_Rate *= -1.0;
-  if (u_shiver_y < 0.0 && u_shiver_y_Rate < 0) u_shiver_y_Rate *= -1.0;  
+
+  u_shiver_y += (u_shiver_y_Rate * elapsed) / 1000.0;
+  // if (u_shiver_y > 2 * Math.PI && u_shiver_y_Rate > 0) u_shiver_y_Rate *= -1.0;
+  // if (u_shiver_y < 0.0 && u_shiver_y_Rate < 0) u_shiver_y_Rate *= -1.0;
 
   return (newAngle %= 360);
 }
-
 
 //==================HTML Button Callbacks
 function nextShape() {
