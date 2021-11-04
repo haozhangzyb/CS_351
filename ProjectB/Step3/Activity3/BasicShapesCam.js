@@ -758,6 +758,7 @@ function animate(angle) {
   var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
 
   u_shiver_y += (u_shiver_y_Rate * elapsed) / 1000.0;
+  u_shiver_y %=  Math.PI * 2;
   // if (u_shiver_y > 2 * Math.PI && u_shiver_y_Rate > 0) u_shiver_y_Rate *= -1.0;
   // if (u_shiver_y < 0.0 && u_shiver_y_Rate < 0) u_shiver_y_Rate *= -1.0;
 
