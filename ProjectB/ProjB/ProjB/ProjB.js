@@ -61,6 +61,220 @@ var qNew = new Quaternion(0, 0, 0, 1); // most-recent mouse drag's rotation
 var qTot = new Quaternion(0, 0, 0, 1); // 'current' orientation (made from qNew)
 var quatMatrix = new Matrix4(); // rotation matrix, made from latest qTot
 
+var g_angle03 = 0; // initial rotation angle
+var g_angle03Rate = 200.0; // rotation speed, in degrees/second
+
+var g_angle04 = 0; // initial rotation angle
+var g_angle04Rate = 300.0; // rotation speed, in degrees/second
+
+axisVerts = new Float32Array([
+  0.0,  0.0,  0.0, 1.0,			1.0,  0,  0,	// X axis line (origin: gray)
+  1.3,  0.0,  0.0, 1.0,		1.0,  0,  0,	// 						 (endpoint: red)
+  
+  0.0,  0.0,  0.0, 1.0,    0,  1.0,  0,	// Y axis line (origin: white)
+  0.0,  1.3,  0.0, 1.0,		0,  1.0,  0,	//						 (endpoint: green)
+
+  0.0,  0.0,  0.0, 1.0,		0,  0,  1.0,	// Z axis line (origin:white)
+  0.0,  0.0,  1.3, 1.0,		0,  0,  1.0,
+]);
+
+var c30 = Math.sqrt(0.75); // == cos(30deg) == sqrt(3) / 2
+var sq2 = Math.sqrt(2.0);
+
+var projaVerts = new Float32Array([
+  // Vertex coordinates(x,y,z,w) and color (R,G,B) for a color tetrahedron:
+  //		Apex on +z axis; equilateral triangle base at z=0
+  /*	Nodes:
+  0.0,  0.0, sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0 (apex, +z axis;  white)
+  c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1 (base: lower rt; red)
+  0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2 (base: +y axis;  grn)
+  -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
+
+
+  0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0' (apex, +z axis;  white)
+  c30, -0.5, -4.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1' (base: lower rt; red)
+  0.0,  1.0, -4.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2' (base: +y axis;  grn)
+  -c30, -0.5, -4.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3' (base:lower lft; blue)
+
+  */
+
+  // Face 0: (left side)
+  0.0,     0.0,     sq2,     1.0,     1.0,     1.0,     1.0, // Node 0
+  c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  // Face 1: (right side)
+  0.0,     0.0,     sq2,     1.0,     1.0,     1.0,     1.0, // Node 0
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  -c30,   -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+  // Face 2: (lower side)
+  0.0,     0.0,     sq2,     1.0,     1.0,     1.0,     1.0, // Node 0
+  -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+  c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+  // Face 3: (base side)
+  -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3 
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  c30,	-0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+
+  c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1 (base: lower rt; red)
+  0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2 (base: +y axis;  grn)
+  c30, -0.5, -4.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1' (base: lower rt; red)
+
+  c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1 (base: lower rt; red)
+  0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2 (base: +y axis;  grn)
+  0.0,  1.0, -4.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2' (base: +y axis;  grn)
+
+  0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2 (base: +y axis;  grn)
+  -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
+  0.0,  1.0, -4.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2' (base: +y axis;  grn)
+
+  0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2 (base: +y axis;  grn)
+  -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
+  -c30, -0.5, -4.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3' (base:lower lft; blue)
+
+  c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1 (base: lower rt; red)
+  -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
+  c30, -0.5, -4.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1' (base: lower rt; red)
+
+  c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1 (base: lower rt; red)
+  -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
+  -c30, -0.5, -4.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3' (base:lower lft; blue)
+
+
+  0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0'
+  c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  // Face 1: (right side)
+  0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0'
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  -c30,   -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+  // Face 2: (lower side)
+  0.0,  0.0, -sq2, 1.0,		1.0,  1.0,	1.0,	// Node 0'
+  -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+  c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+  // Face 3: (base side)
+  -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3 
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  c30,	-0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+
+
+
+  /* // Cube Nodes  ('node': a 3D location where we specify 1 or more vertices)
+  -1.0, -1.0, -1.0, 1.0	// Node 0
+  -1.0,  1.0, -1.0, 1.0	// Node 1
+  1.0,  1.0, -1.0, 1.0	// Node 2
+  1.0, -1.0, -1.0, 1.0	// Node 3
+
+  1.0,  1.0,  1.0, 1.0	// Node 4
+  -1.0,  1.0,  1.0, 1.0	// Node 5
+  -1.0, -1.0,  1.0, 1.0	// Node 6
+  1.0, -1.0,  1.0, 1.0	// Node 7
+
+  3.0, 0.0, 0.0, 1.0  // Node 8
+  -3.0, 0.0, 0.0, 1.0  // Node 9
+  0.0, 3.0, 0.0, 1.0  // Node 10
+  0.0, -3.0, 0.0, 1.0  // Node 11
+  0.0, 0.0, 3.0, 1.0  // Node 12
+  0.0, 0.0, -3.0, 1.0  // Node 13
+  */
+  // +x face: RED
+  1.0, -1.0, -1.0, 1.0,		1.0, 0.0, 0.0,	// Node 3
+  1.0,  1.0, -1.0, 1.0,		1.0, 0.0, 0.0,	// Node 2
+  1.0,  1.0,  1.0, 1.0,	  	1.0, 0.0, 0.0,  // Node 4
+
+  1.0,  1.0,  1.0, 1.0,	  1.0, 0.1, 0.1,	// Node 4
+  1.0, -1.0,  1.0, 1.0,	  1.0, 0.1, 0.1,	// Node 7
+  1.0, -1.0, -1.0, 1.0,	  1.0, 0.1, 0.1,	// Node 3
+
+  // +y face: GREEN
+  -1.0,  1.0, -1.0, 1.0,	  0.0, 1.0, 0.0,	// Node 1
+  -1.0,  1.0,  1.0, 1.0,	  0.0, 1.0, 0.0,	// Node 5
+  1.0,  1.0,  1.0, 1.0,	  0.0, 1.0, 0.0,	// Node 4
+
+  1.0,  1.0,  1.0, 1.0,	  0.1, 1.0, 0.1,	// Node 4
+  1.0,  1.0, -1.0, 1.0,	  0.1, 1.0, 0.1,	// Node 2 
+  -1.0,  1.0, -1.0, 1.0,	  0.1, 1.0, 0.1,	// Node 1
+
+  // +z face: BLUE
+  -1.0,  1.0,  1.0, 1.0,	  0.0, 0.0, 1.0,	// Node 5
+  -1.0, -1.0,  1.0, 1.0,	  0.0, 0.0, 1.0,	// Node 6
+  1.0, -1.0,  1.0, 1.0,	  0.0, 0.0, 1.0,	// Node 7
+
+  1.0, -1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 7
+  1.0,  1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 4
+  -1.0,  1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 5
+
+  // -x face: CYAN
+  -1.0, -1.0,  1.0, 1.0,	  0.0, 1.0, 1.0,	// Node 6	
+  -1.0,  1.0,  1.0, 1.0,	  0.0, 1.0, 1.0,	// Node 5 
+  -1.0,  1.0, -1.0, 1.0,	  0.0, 1.0, 1.0,	// Node 1
+
+  -1.0,  1.0, -1.0, 1.0,	  0.1, 1.0, 1.0,	// Node 1
+  -1.0, -1.0, -1.0, 1.0,	  0.1, 1.0, 1.0,	// Node 0  
+  -1.0, -1.0,  1.0, 1.0,	  0.1, 1.0, 1.0,	// Node 6  
+
+  // -y face: MAGENTA
+  1.0, -1.0, -1.0, 1.0,	  1.0, 0.0, 1.0,	// Node 3
+  1.0, -1.0,  1.0, 1.0,	  1.0, 0.0, 1.0,	// Node 7
+  -1.0, -1.0,  1.0, 1.0,	  1.0, 0.0, 1.0,	// Node 6
+
+  -1.0, -1.0,  1.0, 1.0,	  1.0, 0.1, 1.0,	// Node 6
+  -1.0, -1.0, -1.0, 1.0,	  1.0, 0.1, 1.0,	// Node 0
+  1.0, -1.0, -1.0, 1.0,	  1.0, 0.1, 1.0,	// Node 3
+
+  // -z face: YELLOW
+  1.0,  1.0, -1.0, 1.0,	  1.0, 1.0, 0.0,	// Node 2
+  1.0, -1.0, -1.0, 1.0,	  1.0, 1.0, 0.0,	// Node 3
+  -1.0, -1.0, -1.0, 1.0,	  1.0, 1.0, 0.0,	// Node 0		
+
+  //wings
+  -1.0, -1.0, -1.0, 1.0,	  1.0, 1.0, 0.1,	// Node 0
+  -1.0,  1.0, -1.0, 1.0,	  1.0, 1.0, 0.1,	// Node 1
+  1.0,  1.0, -1.0, 1.0,	  1.0, 1.0, 0.1,	// Node 2
+
+  -1.0, -1.0, -1.0, 1.0,	  0.1, 1.0, 1.0,	// Node 0  
+  -1.0,  1.0, -1.0, 1.0,	  0.1, 1.0, 1.0,	// Node 1
+  -3.0, 0.0, 0.0, 1.0,      0.5, 0.5, 0.5,// Node 9
+
+  -1.0,  1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 5
+  -1.0, -1.0,  1.0, 1.0,	  0.1, 1.0, 1.0,	// Node 6  
+  0.0, 0.0, 3.0, 1.0,       0.5, 0.5, 0.5,// Node 12
+
+  1.0,  1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 4
+  1.0, -1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 7
+  3.0, 0.0, 0.0, 1.0,     0.5, 0.5, 0.5,// Node 8
+
+  1.0,  1.0, -1.0, 1.0,	  1.0, 1.0, 0.1,	// Node 2
+  1.0, -1.0, -1.0, 1.0,	  1.0, 0.1, 1.0,	// Node 3
+  0.0, 0.0, -3.0, 1.0,    0.5, 0.5, 0.5,   // Node 13
+
+  1.0,  1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 4
+  -1.0,  1.0,  1.0, 1.0,	  0.1, 0.1, 1.0,	// Node 5
+  0.0, 3.0, 0.0, 1.0,     0.5, 0.5, 0.5,  // Node 10
+
+  -1.0, -1.0, -1.0, 1.0,	  0.1, 1.0, 1.0,	// Node 0
+  1.0, -1.0, -1.0, 1.0,	  1.0, 0.1, 1.0,	// Node 3  
+  0.0, -3.0, 0.0, 1.0,    0.5, 0.5, 0.5,// Node 11
+
+  // Triangle nodes
+  // Face 0: (left side)
+  0.0,     0.0,     sq2/2,     1.0,     0.5,     0.5,     1.0, // Node 0'
+  c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  // Face 1: (right side)
+  0.0,     0.0,     sq2/2,     1.0,     0.5,     0.5,     1.0, // Node 0'
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  -c30,   -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+  // Face 2: (lower side)
+  0.0,     0.0,     sq2/2,     1.0,     0.5,     0.5,     1.0, // Node 0'
+  -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+  c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+  // Face 3: (base side)
+  -c30,	-0.5,     0.0,     1.0,     0.5,     0.5,     0.0, // Node 3 
+  0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
+  c30,	-0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+
+]);
+
 function main() {
   //==============================================================================
   // Retrieve <canvas> element
@@ -142,13 +356,15 @@ function main() {
   // Start drawing: create 'tick' variable whose value is this function:
   var tick = function () {
     currentAngle = animate(currentAngle); // Update the rotation angle
-    drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix); // Draw shapes
+    drawResize(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
     // report current angle on console
     //console.log('currentAngle=',currentAngle);
     requestAnimationFrame(tick, canvas);
     // Request that the browser re-draw the webpage
   };
   tick(); // start (and continue) animation: draw current image
+
+  
 }
 
 function initVertexBuffer(gl) {
@@ -163,7 +379,7 @@ function initVertexBuffer(gl) {
   makeGroundGrid(); // create, fill the gndVerts array
   // how many floats total needed to store all shapes?
   var mySiz =
-    cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length;
+    cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length + projaVerts.length;
 
   // How many vertices total?
   var nn = mySiz / floatsPerVertex;
@@ -195,6 +411,26 @@ function initVertexBuffer(gl) {
   for (j = 0; j < gndVerts.length; i++, j++) {
     colorShapes[i] = gndVerts[j];
   }
+  axisStart = i;
+  for (j = 0; j < axisVerts.length; i++, j++) {
+    colorShapes[i] = axisVerts[j];
+  }
+
+  projaStart = i;
+  for (j = 0; j < projaVerts.length;  j++) {
+    if (j % 7 == 1) {
+      projaVerts[j] += 1;
+    }
+    else if (j % 7 == 2) {
+      projaVerts[j] += 1;
+    }
+  }
+
+  for (j = 0; j < projaVerts.length; i++, j++) {
+    colorShapes[i] = projaVerts[j];
+  }
+
+
   // Create a buffer object on the graphics hardware:
   var shapeBufferHandle = gl.createBuffer();
   if (!shapeBufferHandle) {
@@ -576,6 +812,8 @@ function makeTorus() {
   torVerts[j + 6] = Math.random(); // random color 0.0 <= B < 1.0
 }
 
+
+
 function makeGroundGrid() {
   //==============================================================================
   // Create a list of vertices that create a large grid of lines in the x,y plane
@@ -635,6 +873,199 @@ function makeGroundGrid() {
   }
 }
 
+function drawCylinder(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+  modelMatrix.translate(-0.7, -0.4, 0.0); // 'set' means DISCARD old matrix,
+  // (drawing axes centered in CVV), and then make new
+  // drawing axes moved to the lower-left corner of CVV.
+  modelMatrix.scale(0.2, 0.2, 0.2);
+  // if you DON'T scale, cyl goes outside the CVV; clipped!
+  modelMatrix.rotate(currentAngle, 0, 1, 0); // spin around y axis.
+  // Drawing:
+  // Pass our current matrix to the vertex shaders:
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  // Draw the cylinder's vertices, and no other vertices:
+  gl.drawArrays(
+    gl.TRIANGLE_STRIP, // use this drawing primitive, and
+    cylStart / floatsPerVertex, // start at this vertex number, and
+    cylVerts.length / floatsPerVertex
+  ); // draw this many vertices.
+}
+
+function drawSphere(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+  modelMatrix.translate(0.5, -0.2, 0.0); // 'set' means DISCARD old matrix,
+  // (drawing axes centered in CVV), and then make new
+  // drawing axes moved to the lower-left corner of CVV.
+  // to match WebGL display canvas.
+  modelMatrix.scale(0.4, 0.4, 0.4);
+ 
+  quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w); // Quaternion-->Matrix
+  modelMatrix.concat(quatMatrix); // apply that matrix.
+  // Drawing:
+  // Pass our current matrix to the vertex shaders:
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  // Draw just the sphere's vertices
+  gl.drawArrays(
+    gl.TRIANGLE_STRIP, // use this drawing primitive, and
+    sphStart / floatsPerVertex, // start at this vertex number, and
+    sphVerts.length / floatsPerVertex
+  ); // draw this many vertices.
+  drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix); 
+}
+
+function drawTorus(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+	modelMatrix.translate(-0.7, 1.2, 0.0); // 'set' means DISCARD old matrix,
+
+	modelMatrix.scale(0.3, 0.3, 0.3);
+	// Make it smaller:
+	modelMatrix.rotate(currentAngle, 0, 1, 1); // Spin on YZ axis
+	// Drawing:
+	// Pass our current matrix to the vertex shaders:
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the torus's vertices
+	gl.drawArrays(
+		gl.TRIANGLE_STRIP, // use this drawing primitive, and
+		torStart / floatsPerVertex, // start at this vertex number, and
+		torVerts.length / floatsPerVertex
+	); // draw this many vertices.
+}
+
+function drawGroundGrid(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+	// position it.
+	modelMatrix.translate(0.4, -0.4, 0.0);
+	modelMatrix.scale(0.1, 0.1, 0.1); // shrink by 10X:
+  
+	// Drawing:
+	// Pass our current matrix to the vertex shaders:
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the ground-plane's vertices
+	gl.drawArrays(
+	  gl.LINES, // use this drawing primitive, and
+	  gndStart / floatsPerVertex, // start at this vertex number, and
+	  gndVerts.length / floatsPerVertex
+	); // draw this many vertices.
+}
+
+
+function drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+  modelMatrix.scale(30, 30, 30);
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  gl.drawArrays(
+    gl.LINES, // use this drawing primitive, and
+    (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length) /
+      floatsPerVertex, // start at this vertex number, and
+      axisVerts.length / floatsPerVertex
+  );
+}
+
+function DrawRocketHeadAndBody(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+	modelMatrix.translate(-2.5, 1.2, 1.0);
+	modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+	// to match WebGL display canvas.
+	modelMatrix.scale(0.3, 0.3, 0.3);
+	// if you DON'T scale, tetra goes outside the CVV; clipped!
+	modelMatrix.rotate(currentAngle, 0, 1, 1); // Spin on YZ axis
+	// Tetra_g_modelMatrix.rotate(g_angle01, 0, 0, 1); // Make new drawing axes that
+	// Tetra_g_modelMatrix.rotate(rocketTiltAngle, 0, 1, 0);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw triangles: start at vertex 0 and draw 12 vertices
+	gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 
+			12);
+  	gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 12, 
+			18);
+}
+
+function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+	var c30 = Math.sqrt(0.75); // == cos(30deg) == sqrt(3) / 2
+	var sq2 = Math.sqrt(2.0);
+	var x = [c30, 0.0, -c30];
+	var y = [-0.5, 1.0, -0.5];
+	var z = [-4.0, -4.0, -4.0];
+	var x1 = [3, 0, -3, 0]
+	var y1 = [0, 0, 0, 0]
+	var z1 = [0, -3, 0, 3]
+	
+	pushMatrix(modelMatrix);
+	for (var i = 0; i < 3; i++) {
+	  Tetra_g_modelMatrix = popMatrix();
+	  if (i != 2){
+		pushMatrix(modelMatrix);
+	  }
+	  
+	  //-------Draw Spinning Tetrahedron
+	  // Tetra_g_modelMatrix.translate(x[0], y[0], z[0]); // 'set' means DISCARD old matrix,
+	  modelMatrix.translate(x[i], y[i], z[i]); // 'set' means DISCARD old matrix,
+	  // (drawing axes centered in CVV), and then make new
+	  // drawing axes moved to the lower-left corner of CVV.
+	  //g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+	  // to match WebGL display canvas.
+	  modelMatrix.scale(0.3, 0.3, 0.3);
+	  // if you DON'T scale, tetra goes outside the CVV; clipped!
+	  // g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
+	  // g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+	  modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+	  modelMatrix.rotate(90, 1, 0, 0);
+	
+	  // DRAW TETRA:  Use this matrix to transform & draw
+	  //						the first set of vertices stored in our VBO:
+	  // Pass our current matrix to the vertex shaders:
+	  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	  // Draw triangles: start at vertex 0 and draw 12 vertices
+	  gl.drawArrays(
+		  gl.TRIANGLES, 
+		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+		  36);
+	  gl.drawArrays(
+		  gl.TRIANGLES, 
+		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 12);
+  
+	  
+	  modelMatrix.translate(x1[0], y1[0], z1[0]);
+	  modelMatrix.scale(1, 1, 1);
+	  modelMatrix.rotate(90, 1, 0, 0);
+	  modelMatrix.rotate(g_angle04, 0, 0, 1);
+	  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	  gl.drawArrays(
+		  gl.TRIANGLES, 
+		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 12);
+	  gl.drawArrays(
+		  gl.TRIANGLES, 
+		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 30, 12);
+		  
+	}	
+	
+
+}
+
+function DrawWindmill(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+  // NEXT, create different drawing axes, and...
+  modelMatrix.translate(1.0, 1.0, 0.1); // 'set' means DISCARD old matrix,
+  // (drawing axes centered in CVV), and then make new
+  // drawing axes moved to the lower-left corner of CVV.
+  // modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+  // to match WebGL display canvas.
+  modelMatrix.scale(0.005, 0.005, 0.005); // Make it smaller.
+
+  modelMatrix.rotate(currentAngle, 0, 1, 0)
+
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+  drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+  // Draw only the last 2 triangles: start at vertex 6, draw 6 vertices
+  gl.drawArrays(
+    gl.TRIANGLES, 
+    (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+    36);
+  gl.drawArrays(
+    gl.TRIANGLES, 
+    (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+    18);
+}
+
 function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   //==============================================================================
   // Clear <canvas>  colors AND the depth buffer
@@ -645,10 +1076,10 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   modelMatrix.setIdentity(); // DEFINE 'world-space' coords.
 
   modelMatrix.perspective(
-    80.0, // FOVY: top-to-bottom vertical image angle, in degrees
+    35.0, // FOVY: top-to-bottom vertical image angle, in degrees
     g_canvas.width / 2 / g_canvas.height, // Image Aspect Ratio: camera lens width/height
-    1.0, // camera z-near distance (always positive; frustum begins at z = -znear)
-    1000
+    1, // camera z-near distance (always positive; frustum begins at z = -znear)
+    50
   ); // camera z-far distance (always positive; frustum ends at z = -zfar)
 
   modelMatrix.lookAt(
@@ -663,89 +1094,45 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
     1
   ); // View UP vector.
 
-  //===========================================================
-  //
-  pushMatrix(modelMatrix); // SAVE world coord system;
+
+  pushMatrix(modelMatrix); 
   //-------Draw Spinning Cylinder:
-  modelMatrix.translate(-0.4, -0.4, 0.0); // 'set' means DISCARD old matrix,
-  // (drawing axes centered in CVV), and then make new
-  // drawing axes moved to the lower-left corner of CVV.
-  modelMatrix.scale(0.2, 0.2, 0.2);
-  // if you DON'T scale, cyl goes outside the CVV; clipped!
-  modelMatrix.rotate(currentAngle, 0, 1, 0); // spin around y axis.
-  // Drawing:
-  // Pass our current matrix to the vertex shaders:
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw the cylinder's vertices, and no other vertices:
-  gl.drawArrays(
-    gl.TRIANGLE_STRIP, // use this drawing primitive, and
-    cylStart / floatsPerVertex, // start at this vertex number, and
-    cylVerts.length / floatsPerVertex
-  ); // draw this many vertices.
-  modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
-  //===========================================================
-  //
-  pushMatrix(modelMatrix); // SAVE world drawing coords.
+  drawCylinder(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+  modelMatrix = popMatrix(); 
+
+
+  pushMatrix(modelMatrix);
   //--------Draw Spinning Sphere
-  modelMatrix.translate(0.4, 0.4, 0.0); // 'set' means DISCARD old matrix,
-  // (drawing axes centered in CVV), and then make new
-  // drawing axes moved to the lower-left corner of CVV.
-  // to match WebGL display canvas.
-  modelMatrix.scale(0.3, 0.3, 0.3);
-  // Make it smaller:
-  //modelMatrix.rotate(currentAngle, 1, 1, 0); // Spin on XY diagonal axis
+  drawSphere(gl, n, currentAngle, modelMatrix, u_ModelMatrix) 
+  modelMatrix = popMatrix(); 
 
-  quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w); // Quaternion-->Matrix
-  modelMatrix.concat(quatMatrix); // apply that matrix.
-  // Drawing:
-  // Pass our current matrix to the vertex shaders:
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw just the sphere's vertices
-  gl.drawArrays(
-    gl.TRIANGLE_STRIP, // use this drawing primitive, and
-    sphStart / floatsPerVertex, // start at this vertex number, and
-    sphVerts.length / floatsPerVertex
-  ); // draw this many vertices.
-  modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
 
-  //===========================================================
-  //
-  pushMatrix(modelMatrix); // SAVE world drawing coords.
+  pushMatrix(modelMatrix); 
   //--------Draw Spinning torus
-  modelMatrix.translate(-0.4, 0.4, 0.0); // 'set' means DISCARD old matrix,
-
-  modelMatrix.scale(0.3, 0.3, 0.3);
-  // Make it smaller:
-  modelMatrix.rotate(currentAngle, 0, 1, 1); // Spin on YZ axis
-  // Drawing:
-  // Pass our current matrix to the vertex shaders:
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw just the torus's vertices
-  gl.drawArrays(
-    gl.TRIANGLE_STRIP, // use this drawing primitive, and
-    torStart / floatsPerVertex, // start at this vertex number, and
-    torVerts.length / floatsPerVertex
-  ); // draw this many vertices.
-  modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
-  //===========================================================
-  //
-  pushMatrix(modelMatrix); // SAVE world drawing coords.
+  drawTorus(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+  modelMatrix = popMatrix();
+  
+  
+  pushMatrix(modelMatrix); 
   //---------Draw Ground Plane, without spinning.
-  // position it.
-  modelMatrix.translate(0.4, -0.4, 0.0);
-  modelMatrix.scale(0.1, 0.1, 0.1); // shrink by 10X:
+  drawGroundGrid(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+  modelMatrix = popMatrix(); 
 
-  // Drawing:
-  // Pass our current matrix to the vertex shaders:
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw just the ground-plane's vertices
-  gl.drawArrays(
-    gl.LINES, // use this drawing primitive, and
-    gndStart / floatsPerVertex, // start at this vertex number, and
-    gndVerts.length / floatsPerVertex
-  ); // draw this many vertices.
+  pushMatrix(modelMatrix); 
+  drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix); 
+  modelMatrix = popMatrix(); 
+
+  pushMatrix(modelMatrix); // SAVE world coord system;
+  DrawRocketHeadAndBody(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
+  DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
   modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
-  //===========================================================
+
+
+  pushMatrix(modelMatrix); // SAVE world coord system;
+  DrawWindmill(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
+  modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
+
+
 
   gl.viewport(g_canvas.width / 2, 0, g_canvas.width / 2, g_canvas.height);
 
@@ -760,6 +1147,15 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
     50
   );
 
+  // modelMatrix.setOrtho(
+  //   -(g_canvas.width / 2) * ((50 - 1) / 3 + 1),
+  //   g_canvas.width / 2 / 300,
+  //   -g_canvas.height / 300,
+  //   g_canvas.height / 300,
+  //   1,
+  //   50
+  // );
+
   modelMatrix.lookAt(
     g_EyeX,
     g_EyeY,
@@ -772,69 +1168,69 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
     1
   );
 
-  pushMatrix(modelMatrix); // SAVE world coord system;
+  pushMatrix(modelMatrix); 
   //-------Draw Spinning Cylinder:
-  modelMatrix.translate(-0.4, -0.4, 0.0); // 'set' means DISCARD old matrix,
-  // (drawing axes centered in CVV), and then make new
-  // drawing axes moved to the lower-left corner of CVV.
-  modelMatrix.scale(0.2, 0.2, 0.2);
-  // if you DON'T scale, cyl goes outside the CVV; clipped!
-  modelMatrix.rotate(currentAngle, 0, 1, 0); // spin around y axis.
-  // Drawing:
-  // Pass our current matrix to the vertex shaders:
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw the cylinder's vertices, and no other vertices:
-  gl.drawArrays(
-    gl.TRIANGLE_STRIP, // use this drawing primitive, and
-    cylStart / floatsPerVertex, // start at this vertex number, and
-    cylVerts.length / floatsPerVertex
-  ); // draw this many vertices.
+  drawCylinder(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+  modelMatrix = popMatrix(); 
+
+
+  pushMatrix(modelMatrix);
+  //--------Draw Spinning Sphere
+  drawSphere(gl, n, currentAngle, modelMatrix, u_ModelMatrix) 
+  modelMatrix = popMatrix(); 
+
+
+  pushMatrix(modelMatrix); 
+  //--------Draw Spinning torus
+  drawTorus(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+  modelMatrix = popMatrix();
+  
+  
+  pushMatrix(modelMatrix); 
+  //---------Draw Ground Plane, without spinning.
+  drawGroundGrid(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+  modelMatrix = popMatrix(); 
+
+  pushMatrix(modelMatrix); 
+  drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix); 
+  modelMatrix = popMatrix(); 
+
+  pushMatrix(modelMatrix); // SAVE world coord system;
+  DrawRocketHeadAndBody(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
+  DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
   modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
 
-  pushMatrix(modelMatrix); // SAVE world drawing coords.
-  //---------Draw Ground Plane, without spinning.
-  // position it.
-  modelMatrix.translate(0.4, -0.4, 0.0);
-  modelMatrix.scale(0.1, 0.1, 0.1); // shrink by 10X:
 
-  // Drawing:
-  // Pass our current matrix to the vertex shaders:
-  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw just the ground-plane's vertices
-  gl.drawArrays(
-    gl.LINES, // use this drawing primitive, and
-    gndStart / floatsPerVertex, // start at this vertex number, and
-    gndVerts.length / floatsPerVertex
-  );
+  pushMatrix(modelMatrix); // SAVE world coord system;
+  DrawWindmill(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
+  modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
 }
 
 function keydown(ev, gl, u_ViewMatrix, viewMatrix) {
   //------------------------------------------------------
   //HTML calls this'Event handler' or 'callback function' when we press a key:
 
-  disX = g_LookAtX - g_EyeX;
-  disY = g_LookAtY - g_EyeY;
-  disZ = g_LookatZ - g_EyeZ;
+  disX = (g_LookAtX - g_EyeX) * 0.1;
+  disY = (g_LookAtY - g_EyeY) * 0.1;
+  disZ = (g_LookatZ - g_EyeZ) * 0.1;
 
-  var disTotal = Math.sqrt(
-    Math.pow(disX, 2) + Math.pow(disY, 2) + Math.pow(disZ, 2)
-  );
+  // var disTotal = Math.sqrt(
+  //   Math.pow(disX, 2) + Math.pow(disY, 2) + Math.pow(disZ, 2)
+  // );
 
-  rotatedX = Math.cos((theta + 45) * (Math.PI / 180)) / disTotal;
-  rotatedY = Math.sin((theta + 45) * (Math.PI / 180)) / disTotal;
+  rotatedX = (disX * Math.cos(90 * (Math.PI/180))) - (disY * Math.sin(90 * (Math.PI/180)));
+  rotatedY = (disX * Math.sin(90 * (Math.PI/180))) + (disY * Math.cos(90 * (Math.PI/180)));
 
-  disX *= 0.1;
-  disY *= 0.1;
-  disZ *= 0.1;
+
 
   if (ev.keyCode == 39) {
     // The right arrow key was pressed
-    theta -= 1;
+    theta += 1;
     g_LookAtX = g_EyeX + Math.cos(theta * (Math.PI / 180));
     g_LookAtY = g_EyeY + Math.sin(theta * (Math.PI / 180));
   } else if (ev.keyCode == 37) {
     // The left arrow key was pressed
-    theta += 1;
+    theta -= 1;
     g_LookAtX = g_EyeX + Math.cos(theta * (Math.PI / 180));
     g_LookAtY = g_EyeY + Math.sin(theta * (Math.PI / 180));
   } else if (ev.keyCode == 38) {
@@ -864,17 +1260,17 @@ function keydown(ev, gl, u_ViewMatrix, viewMatrix) {
   } else if (ev.keyCode == 65) {
     // Key A
     g_EyeX += rotatedX; // INCREASED for perspective camera)
-    //g_EyeY += rotatedY;
+    g_EyeY += rotatedY;
 
     g_LookAtX += rotatedX;
-    //g_LookAtY += rotatedY;
+    g_LookAtY += rotatedY;
   } else if (ev.keyCode == 68) {
     // Key D
     g_EyeX -= rotatedX; // INCREASED for perspective camera)
-    //g_EyeY -= rotatedY;
+    g_EyeY -= rotatedY;
 
     g_LookAtX -= rotatedX;
-    //g_LookAtY -= rotatedY;
+    g_LookAtY -= rotatedY;
   } else {
     return;
   } // Prevent the unnecessary drawing
@@ -893,6 +1289,8 @@ function animate(angle) {
   //  limit the angle to move smoothly between +20 and -85 degrees:
   //  if(angle >  120.0 && ANGLE_STEP > 0) ANGLE_STEP = -ANGLE_STEP;
   //  if(angle < -120.0 && ANGLE_STEP < 0) ANGLE_STEP = -ANGLE_STEP;
+  g_angle03 = g_angle03 + (g_angle03Rate * elapsed) / 1000.0;
+  g_angle04 = g_angle04 + (g_angle04Rate * elapsed) / 1000.0;
 
   var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
   return (newAngle %= 360);
@@ -912,12 +1310,19 @@ function myMouseDown(ev) {
   //  console.log('myMouseDown(pixel coords): xp,yp=\t',xp,',\t',yp);
 
   // Convert to Canonical View Volume (CVV) coordinates too:
+  // var x =
+  //   (xp - g_canvas.width / 2) / // move origin to center of canvas and
+  //   (g_canvas.width / 2); // normalize canvas to -1 <= x < +1,
+  // var y =
+  //   (yp - g_canvas.height / 2) / //										 -1 <= y < +1.
+  //   (g_canvas.height / 2);
+
   var x =
-    (xp - g_canvas.width / 2) / // move origin to center of canvas and
-    (g_canvas.width / 2); // normalize canvas to -1 <= x < +1,
+    (xp - g_canvas.width) / // move origin to center of canvas and
+    (g_canvas.width); // normalize canvas to -1 <= x < +1,
   var y =
-    (yp - g_canvas.height / 2) / //										 -1 <= y < +1.
-    (g_canvas.height / 2);
+    (yp - g_canvas.height) / //										 -1 <= y < +1.
+    (g_canvas.height);
   //	console.log('myMouseDown(CVV coords  ):  x, y=\t',x,',\t',y);
 
   g_isDrag = true; // set our mouse-dragging flag
@@ -942,12 +1347,18 @@ function myMouseDown(ev, gl, canvas) {
   //  console.log('myMouseDown(pixel coords): xp,yp=\t',xp,',\t',yp);
 
   // Convert to Canonical View Volume (CVV) coordinates too:
+  // var x =
+  //   (xp - canvas.width / 2) / // move origin to center of canvas and
+  //   (canvas.width / 2); // normalize canvas to -1 <= x < +1,
+  // var y =
+  //   (yp - canvas.height / 2) / //										 -1 <= y < +1.
+  //   (canvas.height / 2);
   var x =
-    (xp - canvas.width / 2) / // move origin to center of canvas and
-    (canvas.width / 2); // normalize canvas to -1 <= x < +1,
+  (xp - g_canvas.width) / // move origin to center of canvas and
+  (g_canvas.width); // normalize canvas to -1 <= x < +1,
   var y =
-    (yp - canvas.height / 2) / //										 -1 <= y < +1.
-    (canvas.height / 2);
+    (yp - g_canvas.height) / //										 -1 <= y < +1.
+    (g_canvas.height);
   //	console.log('myMouseDown(CVV coords  ):  x, y=\t',x,',\t',y);
 
   isDrag = true; // set our mouse-dragging flag
@@ -971,13 +1382,18 @@ function myMouseMove(ev, gl, canvas) {
   //  console.log('myMouseMove(pixel coords): xp,yp=\t',xp,',\t',yp);
 
   // Convert to Canonical View Volume (CVV) coordinates too:
+  // var x =
+  //   (xp - canvas.width / 2) / // move origin to center of canvas and
+  //   (canvas.width / 2); // normalize canvas to -1 <= x < +1,
+  // var y =
+  //   (yp - canvas.height / 2) / //										 -1 <= y < +1.
+  //   (canvas.height / 2);
   var x =
-    (xp - canvas.width / 2) / // move origin to center of canvas and
-    (canvas.width / 2); // normalize canvas to -1 <= x < +1,
+  (xp - g_canvas.width) / // move origin to center of canvas and
+  (g_canvas.width); // normalize canvas to -1 <= x < +1,
   var y =
-    (yp - canvas.height / 2) / //										 -1 <= y < +1.
-    (canvas.height / 2);
-
+    (yp - g_canvas.height) / //										 -1 <= y < +1.
+    (g_canvas.height);
   // find how far we dragged the mouse:
   xMdragTot += x - xMclik; // Accumulate change-in-mouse-position,&
   yMdragTot += y - yMclik;
@@ -1002,12 +1418,18 @@ function myMouseUp(ev, gl, canvas) {
   //  console.log('myMouseUp  (pixel coords): xp,yp=\t',xp,',\t',yp);
 
   // Convert to Canonical View Volume (CVV) coordinates too:
+  // var x =
+  //   (xp - canvas.width / 2) / // move origin to center of canvas and
+  //   (canvas.width / 2); // normalize canvas to -1 <= x < +1,
+  // var y =
+  //   (yp - canvas.height / 2) / //										 -1 <= y < +1.
+  //   (canvas.height / 2);
   var x =
-    (xp - canvas.width / 2) / // move origin to center of canvas and
-    (canvas.width / 2); // normalize canvas to -1 <= x < +1,
+  (xp - g_canvas.width) / // move origin to center of canvas and
+  (g_canvas.width); // normalize canvas to -1 <= x < +1,
   var y =
-    (yp - canvas.height / 2) / //										 -1 <= y < +1.
-    (canvas.height / 2);
+    (yp - g_canvas.height) / //										 -1 <= y < +1.
+    (g_canvas.height);
   //	console.log('myMouseUp  (CVV coords  ):  x, y=\t',x,',\t',y);
 
   isDrag = false; // CLEAR our mouse-dragging flag, and
@@ -1018,7 +1440,6 @@ function myMouseUp(ev, gl, canvas) {
 
   // AND use any mouse-dragging we found to update quaternions qNew and qTot;
   dragQuat(x - xMclik, y - yMclik);
-
 }
 
 function dragQuat(xdrag, ydrag) {
@@ -1059,3 +1480,15 @@ function dragQuat(xdrag, ydrag) {
   //	qTmp.normalize();						// normalize to ensure we stay at length==1.0.
   qTot.copy(qTmp);
 }
+
+function drawResize(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+  //==============================================================================
+  // Called when user re-sizes their browser window , because our HTML file
+  // contains:  <body onload="main()" onresize="winResize()">
+
+  g_canvas.width = window.innerWidth - 10;
+  g_canvas.height = window.innerHeight * 0.7;
+
+    // IMPORTANT!  Need a fresh drawing in the re-sized viewports.
+    drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix); // Draw shapes
+  }
