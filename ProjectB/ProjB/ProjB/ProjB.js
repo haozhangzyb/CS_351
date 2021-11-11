@@ -45,6 +45,7 @@ var floatsPerVertex = 7; // # of Float32Array elements used for each vertex
 var g_EyeX = -3,
   g_EyeY = 0,
   g_EyeZ = 6;
+
 var theta = 90;
 var g_LookAtX = g_EyeX + Math.cos(theta * (Math.PI / 180));
 var g_LookAtY = g_EyeY + Math.sin(theta * (Math.PI / 180));
@@ -61,11 +62,27 @@ var qNew = new Quaternion(0, 0, 0, 1); // most-recent mouse drag's rotation
 var qTot = new Quaternion(0, 0, 0, 1); // 'current' orientation (made from qNew)
 var quatMatrix = new Matrix4(); // rotation matrix, made from latest qTot
 
+var g_angle01 = 0; // initial rotation angle
+var g_angle01Rate = 200.0; // rotation speed, in degrees/second
+
+var g_angle02 = 0; // initial rotation angle
+var g_angle02Rate = 200.0; // rotation speed, in degrees/second
+
 var g_angle03 = 0; // initial rotation angle
 var g_angle03Rate = 200.0; // rotation speed, in degrees/second
 
 var g_angle04 = 0; // initial rotation angle
-var g_angle04Rate = 300.0; // rotation speed, in degrees/second
+var g_angle04Rate = 200.0; // rotation speed, in degrees/second
+
+var g_angle05 = 0; // initial rotation angle
+var g_angle05Rate = 200.0;
+
+
+var transLoc01 = 2.0;
+var transLoc02 = 2.0;
+var transLoc03 = 2.0;
+var transLoc04 = 2.0;
+
 
 axisVerts = new Float32Array([
   0.0,  0.0,  0.0, 1.0,			1.0,  0,  0,	// X axis line (origin: gray)
@@ -346,7 +363,7 @@ function main() {
   var modelMatrix = new Matrix4();
 
   document.onkeydown = function (ev) {
-    keydown(ev, gl, u_ModelMatrix, modelMatrix);
+    myKeyDown(ev);
   };
 
   // Create, init current rotation angle value in JavaScript
@@ -417,15 +434,6 @@ function initVertexBuffer(gl) {
   }
 
   projaStart = i;
-  for (j = 0; j < projaVerts.length;  j++) {
-    if (j % 7 == 1) {
-      projaVerts[j] += 1;
-    }
-    else if (j % 7 == 2) {
-      projaVerts[j] += 1;
-    }
-  }
-
   for (j = 0; j < projaVerts.length; i++, j++) {
     colorShapes[i] = projaVerts[j];
   }
@@ -897,8 +905,12 @@ function drawSphere(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   // drawing axes moved to the lower-left corner of CVV.
   // to match WebGL display canvas.
   modelMatrix.scale(0.4, 0.4, 0.4);
- 
-  quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w); // Quaternion-->Matrix
+
+  quatMatrix.setFromQuat(
+	  qTot.x, 
+	  qTot.y, 
+	  qTot.z, 
+	  qTot.w); // Quaternion-->Matrix
   modelMatrix.concat(quatMatrix); // apply that matrix.
   // Drawing:
   // Pass our current matrix to the vertex shaders:
@@ -958,12 +970,14 @@ function drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 }
 
 function DrawRocketHeadAndBody(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
-	modelMatrix.translate(-2.5, 1.2, 1.0);
+	modelMatrix.translate(-2.5, 2.0, 1.0);
 	modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
 	// to match WebGL display canvas.
 	modelMatrix.scale(0.3, 0.3, 0.3);
 	// if you DON'T scale, tetra goes outside the CVV; clipped!
-	modelMatrix.rotate(currentAngle, 0, 1, 1); // Spin on YZ axis
+	modelMatrix.rotate(120, 0, 1, 0);
+	modelMatrix.rotate(-90, 1, 0, 0);
+	modelMatrix.rotate(currentAngle, 0, 0, 1); // Spin on YZ axis
 	// Tetra_g_modelMatrix.rotate(g_angle01, 0, 0, 1); // Make new drawing axes that
 	// Tetra_g_modelMatrix.rotate(rocketTiltAngle, 0, 1, 0);
 
@@ -979,6 +993,273 @@ function DrawRocketHeadAndBody(gl, n, currentAngle, modelMatrix, u_ModelMatrix) 
 			18);
 }
 
+// function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+// 	var c30 = Math.sqrt(0.75); // == cos(30deg) == sqrt(3) / 2
+// 	var sq2 = Math.sqrt(2.0);
+// 	var x = [c30, 0.0, -c30];
+// 	var y = [-0.5, 1.0, -0.5];
+// 	var z = [-4.0, -4.0, -4.0];
+// 	var x1 = [3, 0, -3, 0]
+// 	var y1 = [0, 0, 0, 0]
+// 	var z1 = [0, -3, 0, 3]
+	
+  
+// 	pushMatrix(modelMatrix);
+// 		i = 0;
+// 		modelMatrix.translate(x[i], y[i], z[i]); 
+// 		//g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.3, 0.3, 0.3);
+// 		// g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
+// 		// g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		modelMatrix.rotate(g_angle01, 0, 0, 1); // Make new drawing axes that
+// 		modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(-g_angle02, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(g_angle03, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+		
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(-g_angle04, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2 - sq2, 0);
+// 		modelMatrix.scale(2, 2, 2);
+// 		modelMatrix.rotate(90, 1, 0, 0);
+// 		modelMatrix.rotate(g_angle05, 0, 0, 1);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 
+// 			12);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 30, 
+// 			12);
+// 	modelMatrix = popMatrix();
+
+// 	pushMatrix(modelMatrix);
+// 		i = 1;
+// 		modelMatrix.translate(x[i], y[i], z[i]); 
+// 		//g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.3, 0.3, 0.3);
+// 		// g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
+// 		// g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		modelMatrix.rotate(g_angle01, 0, 0, 1); // Make new drawing axes that
+// 		modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(-g_angle02, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(g_angle03, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+		
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(-g_angle04, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2 - sq2, 0);
+// 		modelMatrix.scale(2, 2, 2);
+// 		modelMatrix.rotate(90, 1, 0, 0);
+// 		modelMatrix.rotate(g_angle05, 0, 0, 1);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 
+// 			12);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 30, 
+// 			12);
+// 	modelMatrix = popMatrix();
+    
+//     pushMatrix(modelMatrix);
+// 		i = 2;
+// 		modelMatrix.translate(x[i], y[i], z[i]); 
+// 		//g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.3, 0.3, 0.3);
+// 		// g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
+// 		// g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		modelMatrix.rotate(g_angle01, 0, 0, 1); // Make new drawing axes that
+// 		modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(-g_angle02, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(g_angle03, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+		
+// 		modelMatrix.translate(0, -2, 0); 
+// 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+// 		modelMatrix.scale(0.8, 0.8, 0.8);
+// 		modelMatrix.rotate(-g_angle04, 0, 1, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+// 		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+// 		// modelMatrix.rotate(90, 1, 0, 0);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+// 			36);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+// 			12);
+
+// 		modelMatrix.translate(0, -2 - sq2, 0);
+// 		modelMatrix.scale(2, 2, 2);
+// 		modelMatrix.rotate(90, 1, 0, 0);
+// 		modelMatrix.rotate(g_angle05, 0, 0, 1);
+// 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 
+// 			12);
+// 		gl.drawArrays(
+// 			gl.TRIANGLES, 
+// 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 30, 
+// 			12);
+// 	modelMatrix = popMatrix();
+// }
+
 function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	var c30 = Math.sqrt(0.75); // == cos(30deg) == sqrt(3) / 2
 	var sq2 = Math.sqrt(2.0);
@@ -989,58 +1270,94 @@ function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	var y1 = [0, 0, 0, 0]
 	var z1 = [0, -3, 0, 3]
 	
+
 	pushMatrix(modelMatrix);
-	for (var i = 0; i < 3; i++) {
-	  Tetra_g_modelMatrix = popMatrix();
-	  if (i != 2){
-		pushMatrix(modelMatrix);
-	  }
-	  
-	  //-------Draw Spinning Tetrahedron
-	  // Tetra_g_modelMatrix.translate(x[0], y[0], z[0]); // 'set' means DISCARD old matrix,
-	  modelMatrix.translate(x[i], y[i], z[i]); // 'set' means DISCARD old matrix,
-	  // (drawing axes centered in CVV), and then make new
-	  // drawing axes moved to the lower-left corner of CVV.
-	  //g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
-	  // to match WebGL display canvas.
-	  modelMatrix.scale(0.3, 0.3, 0.3);
-	  // if you DON'T scale, tetra goes outside the CVV; clipped!
-	  // g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
-	  // g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
-	  modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
-	  modelMatrix.rotate(90, 1, 0, 0);
-	
-	  // DRAW TETRA:  Use this matrix to transform & draw
-	  //						the first set of vertices stored in our VBO:
-	  // Pass our current matrix to the vertex shaders:
-	  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-	  // Draw triangles: start at vertex 0 and draw 12 vertices
-	  gl.drawArrays(
-		  gl.TRIANGLES, 
-		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
-		  36);
-	  gl.drawArrays(
-		  gl.TRIANGLES, 
-		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 12);
-  
-	  
-	  modelMatrix.translate(x1[0], y1[0], z1[0]);
-	  modelMatrix.scale(1, 1, 1);
-	  modelMatrix.rotate(90, 1, 0, 0);
-	  modelMatrix.rotate(g_angle04, 0, 0, 1);
-	  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-	  gl.drawArrays(
-		  gl.TRIANGLES, 
-		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 12);
-	  gl.drawArrays(
-		  gl.TRIANGLES, 
-		  (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 30, 12);
-		  
-	}	
-	
+		var i = 1;
+		// modelMatrix.translate(x[i], y[i], z[i]); 
+		modelMatrix.translate(0, 0, z[i] - 0.9); 
 
+		//g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+		// modelMatrix.scale(0.9, 0.9, 0.9);
+		// g_modelMatrix.rotate(g_angle01, 0, 1, 0); // Make new drawing axes that
+		// g_modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+		modelMatrix.rotate(g_angle01, 0, 0, 1); // Make new drawing axes that
+		modelMatrix.rotate(90, 1, 0, 0);
+		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+			36);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+			12);
+
+		modelMatrix.translate(transLoc01, -1.8, 0); 
+		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+		modelMatrix.scale(0.8, 0.8, 0.8);
+		modelMatrix.rotate(g_angle02, 0, 1, 0); // Make new drawing axes that
+		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+		// modelMatrix.rotate(90, 1, 0, 0);
+		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+			36);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+			12);
+
+		modelMatrix.translate(transLoc02, -1.8, 0); 
+		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+		modelMatrix.scale(0.8, 0.8, 0.8);
+		modelMatrix.rotate(g_angle03, 0, 1, 0); // Make new drawing axes that
+		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+		// modelMatrix.rotate(90, 1, 0, 0);
+		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+			36);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+			12);
+		
+		modelMatrix.translate(transLoc03, -1.8, 0); 
+		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
+		modelMatrix.scale(0.8, 0.8, 0.8);
+		modelMatrix.rotate(g_angle04, 0, 1, 0); // Make new drawing axes that
+		// modelMatrix.rotate(g_angle02, 1, 0, 0); // Make new drawing axes that
+		// modelMatrix.rotate(-g_angle03, 0, 0, 1); // Make new drawing axes that
+		// modelMatrix.rotate(90, 1, 0, 0);
+		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+			36);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+			12);
+
+		modelMatrix.translate(transLoc04, -2 - sq2, 0);
+		modelMatrix.scale(2, 2, 2);
+		modelMatrix.rotate(90, 1, 0, 0);
+		modelMatrix.rotate(g_angle05, 0, 0, 1);
+		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 
+			12);
+		gl.drawArrays(
+			gl.TRIANGLES, 
+			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 30, 
+			12);
+	modelMatrix = popMatrix();
 }
-
 function DrawWindmill(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   // NEXT, create different drawing axes, and...
   modelMatrix.translate(1.0, 1.0, 0.1); // 'set' means DISCARD old matrix,
@@ -1048,13 +1365,13 @@ function DrawWindmill(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   // drawing axes moved to the lower-left corner of CVV.
   // modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
   // to match WebGL display canvas.
-  modelMatrix.scale(0.005, 0.005, 0.005); // Make it smaller.
+  modelMatrix.scale(0.25, 0.25, 0.25); // Make it smaller.
 
   modelMatrix.rotate(currentAngle, 0, 1, 0)
 
   gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
-  drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+//   drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
   // Draw only the last 2 triangles: start at vertex 6, draw 6 vertices
   gl.drawArrays(
     gl.TRIANGLES, 
@@ -1064,6 +1381,8 @@ function DrawWindmill(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
     gl.TRIANGLES, 
     (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
     18);
+	modelMatrix.scale(0.3, 0.3, 0.3);
+	drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
 }
 
 function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
@@ -1138,23 +1457,23 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 
   modelMatrix.setIdentity(); // DEFINE 'world-space' coords.
 
+//   modelMatrix.setOrtho(
+//     -(g_canvas.width / 2) / 300,
+//     g_canvas.width / 2 / 300,
+//     -g_canvas.height / 300,
+//     g_canvas.height / 300,
+//     1,
+//     50
+//   );
+
   modelMatrix.setOrtho(
-    -(g_canvas.width / 2) / 300,
-    g_canvas.width / 2 / 300,
-    -g_canvas.height / 300,
-    g_canvas.height / 300,
+    -(g_canvas.width / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
+    (g_canvas.width / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
+    -(g_canvas.height / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
+    (g_canvas.height / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
     1,
     50
   );
-
-  // modelMatrix.setOrtho(
-  //   -(g_canvas.width / 2) * ((50 - 1) / 3 + 1),
-  //   g_canvas.width / 2 / 300,
-  //   -g_canvas.height / 300,
-  //   g_canvas.height / 300,
-  //   1,
-  //   50
-  // );
 
   modelMatrix.lookAt(
     g_EyeX,
@@ -1206,22 +1525,13 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   modelMatrix = popMatrix(); // RESTORE 'world' drawing coords.
 }
 
-function keydown(ev, gl, u_ViewMatrix, viewMatrix) {
+function myKeyDown(ev) {
   //------------------------------------------------------
   //HTML calls this'Event handler' or 'callback function' when we press a key:
 
   disX = (g_LookAtX - g_EyeX) * 0.1;
   disY = (g_LookAtY - g_EyeY) * 0.1;
   disZ = (g_LookatZ - g_EyeZ) * 0.1;
-
-  // var disTotal = Math.sqrt(
-  //   Math.pow(disX, 2) + Math.pow(disY, 2) + Math.pow(disZ, 2)
-  // );
-
-  rotatedX = (disX * Math.cos(90 * (Math.PI/180))) - (disY * Math.sin(90 * (Math.PI/180)));
-  rotatedY = (disX * Math.sin(90 * (Math.PI/180))) + (disY * Math.cos(90 * (Math.PI/180)));
-
-
 
   if (ev.keyCode == 39) {
     // The right arrow key was pressed
@@ -1259,18 +1569,18 @@ function keydown(ev, gl, u_ViewMatrix, viewMatrix) {
     g_LookatZ -= disZ;
   } else if (ev.keyCode == 65) {
     // Key A
-    g_EyeX += rotatedX; // INCREASED for perspective camera)
-    g_EyeY += rotatedY;
+    g_EyeX -= (disY * Math.sin(theta * (Math.PI/180))); // INCREASED for perspective camera)
+    g_EyeY += (disY * Math.cos(theta * (Math.PI/180)));
 
-    g_LookAtX += rotatedX;
-    g_LookAtY += rotatedY;
+    g_LookAtX -= (disY * Math.sin(theta * (Math.PI/180)));
+    g_LookAtY += (disY * Math.cos(theta * (Math.PI/180)));
   } else if (ev.keyCode == 68) {
     // Key D
-    g_EyeX -= rotatedX; // INCREASED for perspective camera)
-    g_EyeY -= rotatedY;
+    g_EyeX += (disY * Math.sin(theta * (Math.PI/180))); // INCREASED for perspective camera)
+    g_EyeY -= (disY * Math.cos(theta * (Math.PI/180)));
 
-    g_LookAtX -= rotatedX;
-    g_LookAtY -= rotatedY;
+    g_LookAtX += (disY * Math.sin(theta * (Math.PI/180)));
+    g_LookAtY -= (disY * Math.cos(theta * (Math.PI/180)));
   } else {
     return;
   } // Prevent the unnecessary drawing
@@ -1285,12 +1595,12 @@ function animate(angle) {
   var now = Date.now();
   var elapsed = now - g_last;
   g_last = now;
-  // Update the current rotation angle (adjusted by the elapsed time)
-  //  limit the angle to move smoothly between +20 and -85 degrees:
-  //  if(angle >  120.0 && ANGLE_STEP > 0) ANGLE_STEP = -ANGLE_STEP;
-  //  if(angle < -120.0 && ANGLE_STEP < 0) ANGLE_STEP = -ANGLE_STEP;
+
+  g_angle01 = g_angle01 + (g_angle01Rate * elapsed) / 1000.0;
+  g_angle02 = g_angle02 + (g_angle02Rate * elapsed) / 1000.0;
   g_angle03 = g_angle03 + (g_angle03Rate * elapsed) / 1000.0;
   g_angle04 = g_angle04 + (g_angle04Rate * elapsed) / 1000.0;
+  g_angle05 = g_angle05 + (g_angle05Rate * elapsed) / 1000.0;
 
   var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
   return (newAngle %= 360);
@@ -1491,4 +1801,24 @@ function drawResize(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 
     // IMPORTANT!  Need a fresh drawing in the re-sized viewports.
     drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix); // Draw shapes
-  }
+}
+
+function Angle01Submit() {
+	var UsrTxt = document.getElementById("Angle01").value;
+	transLoc01 = parseFloat(UsrTxt); 
+}
+
+function Angle02Submit() {
+	var UsrTxt = document.getElementById("Angle02").value;
+	transLoc02 = parseFloat(UsrTxt); 
+}
+
+function Angle03Submit() {
+	var UsrTxt = document.getElementById("Angle03").value;
+	transLoc03 = parseFloat(UsrTxt); 
+}
+
+function Angle04Submit() {
+	var UsrTxt = document.getElementById("Angle04").value;
+	transLoc04 = parseFloat(UsrTxt); 
+}
