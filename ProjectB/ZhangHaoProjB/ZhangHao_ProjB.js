@@ -42,6 +42,7 @@ var g_canvas;
 var ANGLE_STEP = 45.0; // Rotation angle rate (degrees/second)
 var floatsPerVertex = 7; // # of Float32Array elements used for each vertex
 
+var far = 500, near = 1;
 var g_EyeX = -3,
   g_EyeY = 0,
   g_EyeZ = 6;
@@ -906,12 +907,20 @@ function drawSphere(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   // to match WebGL display canvas.
   modelMatrix.scale(0.4, 0.4, 0.4);
 
+  // quatMatrix.setFromQuat(
+	//   qTot.x, 
+	//   qTot.y, 
+	//   qTot.z, 
+	//   qTot.w); // Quaternion-->Matrix
+
   quatMatrix.setFromQuat(
 	  qTot.x, 
 	  qTot.y, 
 	  qTot.z, 
 	  qTot.w); // Quaternion-->Matrix
+
   modelMatrix.concat(quatMatrix); // apply that matrix.
+
   // Drawing:
   // Pass our current matrix to the vertex shaders:
   gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -1396,9 +1405,9 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 
   modelMatrix.perspective(
     35.0, // FOVY: top-to-bottom vertical image angle, in degrees
-    g_canvas.width / 2 / g_canvas.height, // Image Aspect Ratio: camera lens width/height
-    1, // camera z-near distance (always positive; frustum begins at z = -znear)
-    50
+    (g_canvas.width / 2) / g_canvas.height, // Image Aspect Ratio: camera lens width/height
+    near, // camera z-near distance (always positive; frustum begins at z = -znear)
+    far
   ); // camera z-far distance (always positive; frustum ends at z = -zfar)
 
   modelMatrix.lookAt(
@@ -1466,13 +1475,14 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 //     50
 //   );
 
+  var sizeAtOneThird = ((far - near) / 3 + near);
   modelMatrix.setOrtho(
-    -(g_canvas.width / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
-    (g_canvas.width / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
-    -(g_canvas.height / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
-    (g_canvas.height / 2) * ((50 - 1) / 3 + 1) / (50 - 1),
-    1,
-    50
+    -(g_canvas.width / 2) / sizeAtOneThird,
+    (g_canvas.width / 2) / sizeAtOneThird,
+    -(g_canvas.height) / sizeAtOneThird,
+    (g_canvas.height) / sizeAtOneThird,
+    near,
+    far
   );
 
   modelMatrix.lookAt(
