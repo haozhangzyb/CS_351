@@ -401,14 +401,14 @@ function initVertexBuffer(gl) {
 
   // How many vertices total?
   var nn = mySiz / floatsPerVertex;
-  console.log(
-    "nn is",
-    nn,
-    "mySiz is",
-    mySiz,
-    "floatsPerVertex is",
-    floatsPerVertex
-  );
+  // console.log(
+  //   "nn is",
+  //   nn,
+  //   "mySiz is",
+  //   mySiz,
+  //   "floatsPerVertex is",
+  //   floatsPerVertex
+  // );
   // Copy all shapes into one big Float32 array:
   var colorShapes = new Float32Array(mySiz);
   // Copy them:  remember where to start for each shape:
@@ -902,35 +902,21 @@ function drawCylinder(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 
 function drawSphere(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
   modelMatrix.translate(0.5, -0.2, 0.0); // 'set' means DISCARD old matrix,
-  // (drawing axes centered in CVV), and then make new
-  // drawing axes moved to the lower-left corner of CVV.
-  // to match WebGL display canvas.
   modelMatrix.scale(0.4, 0.4, 0.4);
-
-  // quatMatrix.setFromQuat(
-	//   qTot.x, 
-	//   qTot.y, 
-	//   qTot.z, 
-	//   qTot.w); // Quaternion-->Matrix
-
   quatMatrix.setFromQuat(
 	  qTot.x, 
 	  qTot.y, 
 	  qTot.z, 
 	  qTot.w); // Quaternion-->Matrix
-
   modelMatrix.concat(quatMatrix); // apply that matrix.
-
-  // Drawing:
-  // Pass our current matrix to the vertex shaders:
   gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw just the sphere's vertices
   gl.drawArrays(
     gl.TRIANGLE_STRIP, // use this drawing primitive, and
     sphStart / floatsPerVertex, // start at this vertex number, and
     sphVerts.length / floatsPerVertex
-  ); // draw this many vertices.
+  ); 
   drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix); 
+
 }
 
 function drawTorus(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
@@ -1482,7 +1468,7 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
     -(g_canvas.height) / sizeAtOneThird,
     (g_canvas.height) / sizeAtOneThird,
     near,
-    far
+    far / 3
   );
 
   modelMatrix.lookAt(
@@ -1832,3 +1818,10 @@ function Angle04Submit() {
 	var UsrTxt = document.getElementById("Angle04").value;
 	transLoc04 = parseFloat(UsrTxt); 
 }
+
+// function changeViewToAssembly() {
+//   var isChecked = document.getElementById("myCheck").checked;
+//   if (isChecked) {
+    
+//   }
+// }
