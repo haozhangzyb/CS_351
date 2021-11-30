@@ -1762,7 +1762,21 @@ function dragQuat(xdrag, ydrag) {
 
   var dist = Math.sqrt(xdrag * xdrag + ydrag * ydrag);
   // console.log('xdrag,ydrag=',xdrag.toFixed(5),ydrag.toFixed(5),'dist=',dist.toFixed(5));
-  qNew.setFromAxisAngle(-ydrag + 0.0001, xdrag + 0.0001, 0.0, dist * 150.0);
+  // qNew.setFromAxisAngle(-ydrag + 0.0001, xdrag + 0.0001, 0.0, dist * 150.0);
+
+  qNew.setFromAxisAngle(-ydrag * Math.cos(theta * (Math.PI / 180)) + 0.0001, 
+                        xdrag * Math.sin(theta * (Math.PI / 180)) + 0.0001, 
+                        0.0, 
+                        dist * 150.0);
+  
+  // qNew.setFromAxisAngle(ydrag * Math.cos(theta * (Math.PI / 180)) + 0.0001, 
+  //                       xdrag + 0.0001, 
+  //                       -ydrag * Math.sin(theta * (Math.PI / 180)) + 0.0001, 
+  //                       dist * 150.0);
+  // qNew.setFromAxisAngle(ydrag * Math.cos(Angle2Rad(theta)) + 0.0001, 
+  //                       xdrag + 0.0001, 
+  //                       -ydrag * Math.sin(Angle2Rad(theta)) + 0.0001, 
+  //                       dist * 150.0);
   // (why add tiny 0.0001? To ensure we never have a zero-length rotation axis)
   // why axis (x,y,z) = (-yMdrag,+xMdrag,0)?
   // -- to rotate around +x axis, drag mouse in -y direction.
