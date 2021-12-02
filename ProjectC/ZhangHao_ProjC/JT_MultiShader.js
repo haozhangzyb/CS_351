@@ -77,6 +77,16 @@ var gl;													// WebGL rendering context -- the 'webGL' object
 																// in JavaScript with all its member fcns & data
 var g_canvasID;									// HTML-5 'canvas' element ID#
 
+var far = 500, near = 1;
+var g_EyeX = 0,
+  g_EyeY = -8,
+  g_EyeZ = 5;
+
+var theta = 90;
+var g_LookAtX = g_EyeX + Math.cos(theta * (Math.PI / 180));
+var g_LookAtY = g_EyeY + Math.sin(theta * (Math.PI / 180));
+var g_LookatZ = 4.5;
+
 // For multiple VBOs & Shaders:-----------------
 worldBox = new VBObox0();		  // Holds VBO & shaders for 3D 'world' ground-plane grid, etc;
 part1Box = new VBObox1();		  // "  "  for first set of custom-shaded 3D parts
@@ -168,6 +178,10 @@ function main() {
                         // including ground-plane,                       
   part1Box.init(gl);		//  "		"		"  for 1st kind of shading & lighting
 	part2Box.init(gl);    //  "   "   "  for 2nd kind of shading & lighting
+
+  document.onkeydown = function (ev) {
+    myKeyDown(ev);
+  };
 	
   gl.clearColor(0.2, 0.2, 0.2, 1);	  // RGBA color for clearing <canvas>
   
@@ -259,8 +273,13 @@ function drawAll() {
   // Clear on-screen HTML-5 <canvas> object:
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-var b4Draw = Date.now();
-var b4Wait = b4Draw - g_lastMS;
+  g_canvasID.width = window.innerWidth - 10;
+  g_canvasID.height = window.innerHeight * 0.7;
+  gl.viewport(0, 0, g_canvasID.width, g_canvasID.height);
+
+
+  var b4Draw = Date.now();
+  var b4Wait = b4Draw - g_lastMS;
 
 	if(g_show0 == 1) {	// IF user didn't press HTML button to 'hide' VBO0:
 	  worldBox.switchToMe();  // Set WebGL to render from this VBObox.
@@ -306,4 +325,65 @@ function VBO2toggle() {
   if(g_show2 != 1) g_show2 = 1;			// show,
   else g_show2 = 0;									// hide.
   console.log('g_show2: '+g_show2);
+}
+
+function myKeyDown(ev) {
+  //------------------------------------------------------
+  //HTML calls this'Event handler' or 'callback function' when we press a key:
+
+  disX = (g_LookAtX - g_EyeX) * 0.1;
+  disY = (g_LookAtY - g_EyeY) * 0.1;
+  disZ = (g_LookatZ - g_EyeZ) * 0.1;
+
+  if (ev.keyCode == 39) {
+    // The right arrow key was pressed
+    theta += 1;
+    g_LookAtX = g_EyeX + Math.cos(theta * (Math.PI / 180));
+    g_LookAtY = g_EyeY + Math.sin(theta * (Math.PI / 180));
+  } else if (ev.keyCode == 37) {
+    // The left arrow key was pressed
+    theta -= 1;
+    g_LookAtX = g_EyeX + Math.cos(theta * (Math.PI / 180));
+    g_LookAtY = g_EyeY + Math.sin(theta * (Math.PI / 180));
+  } else if (ev.keyCode == 38) {
+    // Key ArrowUp
+    g_LookatZ += 0.1; // INCREASED for perspective camera)
+  } else if (ev.keyCode == 40) {
+    // Key ArrowDown
+    g_LookatZ -= 0.1; // INCREASED for perspective camera)
+  } else if (ev.keyCode == 87) {
+    // Key W
+    g_EyeX += disX;
+    g_EyeY += disY;
+    g_EyeZ += disZ;
+
+    g_LookAtX += disX;
+    g_LookAtY += disY;
+    g_LookatZ += disZ;
+  } else if (ev.keyCode == 83) {
+    // Key S
+    g_EyeX -= disX;
+    g_EyeY -= disY;
+    g_EyeZ -= disZ;
+
+    g_LookAtX -= disX;
+    g_LookAtY -= disY;
+    g_LookatZ -= disZ;
+  } else if (ev.keyCode == 65) {
+    // Key A
+    g_EyeX -= (disY * Math.sin(theta * (Math.PI/180))); // INCREASED for perspective camera)
+    g_EyeY += (disY * Math.cos(theta * (Math.PI/180)));
+
+    g_LookAtX -= (disY * Math.sin(theta * (Math.PI/180)));
+    g_LookAtY += (disY * Math.cos(theta * (Math.PI/180)));
+  } else if (ev.keyCode == 68) {
+    // Key D
+    g_EyeX += (disY * Math.sin(theta * (Math.PI/180))); // INCREASED for perspective camera)
+    g_EyeY -= (disY * Math.cos(theta * (Math.PI/180)));
+
+    g_LookAtX += (disY * Math.sin(theta * (Math.PI/180)));
+    g_LookAtY -= (disY * Math.cos(theta * (Math.PI/180)));
+  } else {
+    return;
+  } // Prevent the unnecessary drawing
 }

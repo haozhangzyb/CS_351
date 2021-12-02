@@ -102,6 +102,8 @@ As each 'VBObox' object can contain:
 //=============================================================================
 
 
+
+
 //=============================================================================
 //=============================================================================
 function VBObox0() {
@@ -137,21 +139,36 @@ function VBObox0() {
   'void main() {\n' +
   '  gl_FragColor = vec4(v_Colr0, 1.0);\n' + 
   '}\n';
+  
+  this.axisVerts = new Float32Array([
+    0.0,  0.0,  0.0, 1.0,			1.0,  0,  0,  // X axis line 
+    5.0,  0.0,  0.0, 1.0,		1.0,  0,  0,	  //
+    
+    0.0,  0.0,  0.0, 1.0,    0,  1.0,  0,	  // Y axis line 
+    0.0,  5.0,  0.0, 1.0,		0,  1.0,  0,	  //						 
+  
+    0.0,  0.0,  0.0, 1.0,		0,  0,  1.0,	  // Z axis line
+    0.0,  0.0,  5.0, 1.0,		0,  0,  1.0,
+  ]);
 
-	this.vboContents = //---------------------------------------------------------
-	new Float32Array ([						// Array of vertex attribute values we will
-  															// transfer to GPU's vertex buffer object (VBO)
-	// 1st triangle:
-  	 0.0,	 0.5,	0.0, 1.0,		1.0, 0.0, 0.0, //1 vertex:pos x,y,z,w; color: r,g,b
-    -0.5, -0.5, 0.0, 1.0,		0.0, 1.0, 0.0,
-     0.5, -0.5, 0.0, 1.0,		0.0, 0.0, 1.0,
- // 2nd triangle:
-		 0.0,  0.0, 0.0, 1.0,   1.0, 1.0, 1.0,		// (white)
-		 0.3,  0.0, 0.0, 1.0,   0.0, 0.0, 1.0,		// (blue)
-		 0.0,  0.3, 0.0, 1.0,   0.5, 0.5, 0.5,		// (gray)
-		 ]);
+  this.floatsPerVertex = 7;
+  this.makeGroundGrid();
 
-	this.vboVerts = 6;						// # of vertices held in 'vboContents' array
+  this.mySiz = this.gndVerts.length + this.axisVerts.length;
+
+  this.colorShapes = new Float32Array(this.mySiz);
+  
+  this.gndStart = 0;
+  for (i = 0, j = 0; j < this.gndVerts.length; i++, j++) {
+    this.colorShapes[i] = this.gndVerts[j];
+  }
+  this.axisStart = i;
+  for (j = 0; j < this.axisVerts.length; i++, j++) {
+    this.colorShapes[i] = this.axisVerts[j];
+  }
+
+  this.vboContents = this.colorShapes;
+	this.vboVerts = this.mySiz / this.floatsPerVertex;						// # of vertices held in 'vboContents' array
 	this.FSIZE = this.vboContents.BYTES_PER_ELEMENT;
 	                              // bytes req'd by 1 vboContents array element;
 																// (why? used to compute stride and offset 
@@ -367,8 +384,33 @@ VBObox0.prototype.adjust = function() {
   						'.adjust() call you needed to call this.switchToMe()!!');
   }  
 	// Adjust values for our uniforms,
-  this.ModelMat.setRotate(g_angleNow0, 0, 0, 1);	  // rotate drawing axes,
-  this.ModelMat.translate(0.35, 0, 0);							// then translate them.
+  // this.ModelMat.setRotate(g_angleNow0, 0, 0, 1);	  // rotate drawing axes,
+  // this.ModelMat.setRotate(g_angleNow0, 0, 1, 0);	  // rotate drawing axes,
+  // this.ModelMat.setRotate(0, 0, 1, 0);	  // rotate drawing axes,
+  // this.ModelMat.translate(0.35, 0, 0);							// then translate them.
+  modelMatrix = new Matrix4();	
+  modelMatrix.setIdentity(); // DEFINE 'world-space' coords.
+  modelMatrix.perspective(
+    35.0, // FOVY: top-to-bottom vertical image angle, in degrees
+    g_canvasID.width  / g_canvasID.height, // Image Aspect Ratio: camera lens width/height
+    near, // camera z-near distance (always positive; frustum begins at z = -znear)
+    far
+  ); // camera z-far distance (always positive; frustum ends at z = -zfar)
+  modelMatrix.lookAt(
+    g_EyeX,
+    g_EyeY,
+    g_EyeZ, // center of projection
+    g_LookAtX,
+    g_LookAtY,
+    g_LookatZ, // look-at point
+    0,
+    0,
+    1
+  ); // View UP vector.
+  modelMatrix.scale(0.3, 0.3, 0.3);
+  // this.ModelMat.setIdentity();
+  this.ModelMat.set(modelMatrix);
+  
   //  Transfer new uniforms' values to the GPU:-------------
   // Send  new 'ModelMat' values to the GPU's 'u_ModelMat1' uniform: 
   gl.uniformMatrix4fv(this.u_ModelMatLoc,	// GPU location of the uniform
@@ -388,11 +430,16 @@ VBObox0.prototype.draw = function() {
   						'.draw() call you needed to call this.switchToMe()!!');
   }  
   // ----------------------------Draw the contents of the currently-bound VBO:
-  gl.drawArrays(gl.TRIANGLES, 	    // select the drawing primitive to draw,
+  gl.drawArrays(gl.LINES, 	    // select the drawing primitive to draw,
                   // choices: gl.POINTS, gl.LINES, gl.LINE_STRIP, gl.LINE_LOOP, 
                   //          gl.TRIANGLES, gl.TRIANGLE_STRIP, ...
-  								0, 								// location of 1st vertex to draw;
-  								this.vboVerts);		// number of vertices to draw on-screen.
+  								this.gndStart / this.floatsPerVertex, 								// location of 1st vertex to draw;
+  								(this.gndVerts.length) / this.floatsPerVertex);		// number of vertices to draw on-screen.
+  gl.drawArrays(
+      gl.LINES, // use this drawing primitive, and
+      (this.gndVerts.length) / this.floatsPerVertex, // start at this vertex number, and
+      this.axisVerts.length / this.floatsPerVertex
+  );
 }
 
 VBObox0.prototype.reload = function() {
@@ -437,6 +484,64 @@ VBObox0.prototype.restore = function() {
 //
 }
 */
+VBObox0.prototype.makeGroundGrid = function() {
+	//==============================================================================
+	// Create a list of vertices that create a large grid of lines in the x,y plane
+	// centered at x=y=z=0.  Draw this shape using the GL_LINES primitive.
+  
+	var xcount = 100; // # of lines to draw in x,y to make the grid.
+	var ycount = 100;
+	var xymax = 50.0; // grid size; extends to cover +/-xymax in x and y.
+	var xColr = new Float32Array([1.0, 1.0, 0.3]); // bright yellow
+	var yColr = new Float32Array([0.5, 1.0, 0.5]); // bright green.
+  
+	// Create an (global) array to hold this ground-plane's vertices:
+	this.gndVerts = new Float32Array(this.floatsPerVertex * 2 * (xcount + ycount));
+	// draw a grid made of xcount+ycount lines; 2 vertices per line.
+  
+	var xgap = xymax / (xcount - 1); // HALF-spacing between lines in x,y;
+	var ygap = xymax / (ycount - 1); // (why half? because v==(0line number/2))
+  
+	// First, step thru x values as we make vertical lines of constant-x:
+	for (v = 0, j = 0; v < 2 * xcount; v++, j += this.floatsPerVertex) {
+	  if (v % 2 == 0) {
+		// put even-numbered vertices at (xnow, -xymax, 0)
+		this.gndVerts[j] = -xymax + v * xgap; // x
+		this.gndVerts[j + 1] = -xymax; // y
+		this.gndVerts[j + 2] = 0.0; // z
+		this.gndVerts[j + 3] = 1.0; // w.
+	  } else {
+		// put odd-numbered vertices at (xnow, +xymax, 0).
+		this.gndVerts[j] = -xymax + (v - 1) * xgap; // x
+		this.gndVerts[j + 1] = xymax; // y
+		this.gndVerts[j + 2] = 0.0; // z
+		this.gndVerts[j + 3] = 1.0; // w.
+	  }
+	  this.gndVerts[j + 4] = xColr[0]; // red
+	  this.gndVerts[j + 5] = xColr[1]; // grn
+	  this.gndVerts[j + 6] = xColr[2]; // blu
+	}
+	// Second, step thru y values as wqe make horizontal lines of constant-y:
+	// (don't re-initialize j--we're adding more vertices to the array)
+	for (v = 0; v < 2 * ycount; v++, j += this.floatsPerVertex) {
+	  if (v % 2 == 0) {
+		// put even-numbered vertices at (-xymax, ynow, 0)
+		this.gndVerts[j] = -xymax; // x
+		this.gndVerts[j + 1] = -xymax + v * ygap; // y
+		this.gndVerts[j + 2] = 0.0; // z
+		this.gndVerts[j + 3] = 1.0; // w.
+	  } else {
+		// put odd-numbered vertices at (+xymax, ynow, 0).
+		this.gndVerts[j] = xymax; // x
+		this.gndVerts[j + 1] = -xymax + (v - 1) * ygap; // y
+		this.gndVerts[j + 2] = 0.0; // z
+		this.gndVerts[j + 3] = 1.0; // w.
+	  }
+	  this.gndVerts[j + 4] = yColr[0]; // red
+	  this.gndVerts[j + 5] = yColr[1]; // grn
+	  this.gndVerts[j + 6] = yColr[2]; // blu
+	}
+}
 
 //=============================================================================
 //=============================================================================
