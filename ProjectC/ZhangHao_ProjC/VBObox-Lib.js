@@ -356,8 +356,8 @@ function makeGroundGrid() {
 }
 
 function makeSphere() {
-  var slices = 30;		// # of slices of the sphere along the z axis. >=3 req'd
-  var sliceVerts = 40;	// # of vertices around the top edge of the slice
+  var slices = 17;		// # of slices of the sphere along the z axis. >=3 req'd
+  var sliceVerts = 17;	// # of vertices around the top edge of the slice
   var sliceAngle = Math.PI / slices;	// lattitude angle spanned by one slice.
   sphVerts = new Float32Array(((slices * 2 * sliceVerts) - 2) * floatsPerVertex);
   var cos0 = 0.0;					// sines,cosines of slice's top, bottom edge.
@@ -748,18 +748,16 @@ function VBObox1() {
 	this.shaderLoc;								// GPU Location for compiled Shader-program  
 	this.a_PosLoc;							  // GPU location: shader 'a_Pos1' attribute
   this.a_Normal;              // GPU location: shader 'a_Normal' attribute
-
   
   this.ModelMatrix = new Matrix4();	// Transforms CVV axes to model axes.
   this.NormalMatrix = new Matrix4();
   this.MvpMatrix = new Matrix4();
-  this.eyePosWorld = new Float32Array(3); 
 
   this.u_NormalMatrixLoc;           // GPU location for u_NormalMatrix uniform
   this.u_ModelMatrixLoc;						// GPU location for u_ModelMatrix uniform
-  this.u_MvpMatrixLoc;
-  this.u_eyePosWorldLoc;
-  this.u_isBlinnLoc;
+  this.u_MvpMatrixLoc;              // GPU location for u_MvpMatrixLoc uniform
+  this.u_eyePosWorldLoc;            // GPU location for u_eyePosWorldLoc uniform
+  this.u_isBlinnLoc;                // GPU location for u_isBlinnLoc uniform
 
   this.lamp1 = new LightsT();
 
@@ -876,27 +874,19 @@ VBObox1.prototype.adjust = function() {
             '.adjust() call you needed to call this.switchToMe()!!');
   }
   
-  this.eyePosWorld.set([g_camX, g_camY, g_camZ]); 
+  gl.uniform3f(this.matl1.uLoc_Ke, matlSelect.K_emit[0], matlSelect.K_emit[1], matlSelect.K_emit[2]); 
+  gl.uniform3f(this.matl1.uLoc_Ka, matlSelect.K_ambi[0], matlSelect.K_ambi[1], matlSelect.K_ambi[2]); 
+  gl.uniform3f(this.matl1.uLoc_Kd, matlSelect.K_diff[0], matlSelect.K_diff[1], matlSelect.K_diff[2]);
+  gl.uniform3f(this.matl1.uLoc_Ks, matlSelect.K_spec[0], matlSelect.K_spec[1], matlSelect.K_spec[2]);
+  gl.uniform1i(this.matl1.uLoc_Kshiny,  matlSelect.K_shiny); 
 
-  this.matl1.setMatl(parseInt(matlSelect));
-  gl.uniform3fv(this.matl1.uLoc_Ke, this.matl1.K_emit.slice(0,3)); 
-  gl.uniform3fv(this.matl1.uLoc_Ka, this.matl1.K_ambi.slice(0,3)); 
-  gl.uniform3fv(this.matl1.uLoc_Kd, this.matl1.K_diff.slice(0,3));
-  gl.uniform3fv(this.matl1.uLoc_Ks, this.matl1.K_spec.slice(0,3));
-  gl.uniform1i(this.matl1.uLoc_Kshiny,  this.matl1.K_shiny); 
-
-  this.lamp1.I_pos.elements.set([g_lightPosX, g_lightPosY, g_lightPosZ]);
-  this.lamp1.I_ambi.elements.set([g_ambientR, g_ambientG, g_ambientB]); 
-  this.lamp1.I_diff.elements.set([g_diffuseR, g_diffuseG, g_diffuseB]); 
-  this.lamp1.I_spec.elements.set([g_specularR, g_specularG, g_specularB]); 
-
-  gl.uniform3fv(this.lamp1.u_pos, this.lamp1.I_pos.elements.slice(0,3));
-  gl.uniform3fv(this.lamp1.u_ambi, this.lamp1.I_ambi.elements);
-  gl.uniform3fv(this.lamp1.u_diff, this.lamp1.I_diff.elements);
-  gl.uniform3fv(this.lamp1.u_spec, this.lamp1.I_spec.elements);  
+  gl.uniform3f(this.lamp1.u_pos,  g_lightPosX, g_lightPosY, g_lightPosZ);
+  gl.uniform3f(this.lamp1.u_ambi, g_ambientR, g_ambientG, g_ambientB);
+  gl.uniform3f(this.lamp1.u_diff, g_diffuseR, g_diffuseG, g_diffuseB);
+  gl.uniform3f(this.lamp1.u_spec, g_specularR, g_specularG, g_specularB);
 
   gl.uniform1i(this.u_isBlinnLoc, g_isBlinn);
-  gl.uniform3fv(this.u_eyePosWorldLoc, this.eyePosWorld); 
+  gl.uniform3f(this.u_eyePosWorldLoc, g_camX, g_camY, g_camZ);
 }
 
 VBObox1.prototype.draw = function() {
@@ -1151,25 +1141,26 @@ function VBObox2() {
     this.vboOffset_a_normal =(this.vboFcount_a_Pos1 +
                                 this.vboFcount_a_Colr1) * this.FSIZE;                              
     this.vboLoc;									// GPU Location for Vertex Buffer Object, 
-    this.shaderLoc;								// GPU Location for compiled Shader-program  \
-
+    this.shaderLoc;								// GPU Location for compiled Shader-program
     this.a_Pos1Loc;							  // GPU location: shader 'a_Pos1' attribute
     this.a_Normal;              // GPU location: shader 'a_Normal' attribute
-
   
+    this.ModelMatrix = new Matrix4();	// Transforms CVV axes to model axes.
+    this.NormalMatrix = new Matrix4();
+    this.MvpMatrix = new Matrix4();
+
     this.u_NormalMatrixLoc;           // GPU location for u_NormalMatrix uniform
     this.u_ModelMatrixLoc;						// GPU location for u_ModelMatrix uniform
     this.u_MvpMatrixLoc;
     this.u_eyePosWorldLoc;
     this.u_isBlinnLoc;
-    this.matlSel;
+
     
-    this.eyePosWorld = new Float32Array(3); 
-    this.matl2 = new Material();
     this.lamp2 = new LightsT();
-    this.ModelMatrix = new Matrix4();	// Transforms CVV axes to model axes.
-    this.NormalMatrix = new Matrix4();
-    this.MvpMatrix = new Matrix4();
+
+    this.matlSel;
+    this.matl2 = new Material();
+    
   };
 
   
@@ -1311,28 +1302,20 @@ function VBObox2() {
       console.log('ERROR! before' + this.constructor.name + 
             '.adjust() call you needed to call this.switchToMe()!!');
   }
-  
-  this.eyePosWorld.set([g_camX, g_camY, g_camZ]); 
 
-  this.matl2.setMatl(parseInt(matlSelect));
-  gl.uniform3fv(this.matl2.uLoc_Ke, this.matl2.K_emit.slice(0,3)); 
-  gl.uniform3fv(this.matl2.uLoc_Ka, this.matl2.K_ambi.slice(0,3)); 
-  gl.uniform3fv(this.matl2.uLoc_Kd, this.matl2.K_diff.slice(0,3));
-  gl.uniform3fv(this.matl2.uLoc_Ks, this.matl2.K_spec.slice(0,3));
-  gl.uniform1i(this.matl2.uLoc_Kshiny, this.matl2.K_shiny); 
+  gl.uniform3f(this.matl2.uLoc_Ke, matlSelect.K_emit[0], matlSelect.K_emit[1], matlSelect.K_emit[2]); 
+  gl.uniform3f(this.matl2.uLoc_Ka, matlSelect.K_ambi[0], matlSelect.K_ambi[1], matlSelect.K_ambi[2]); 
+  gl.uniform3f(this.matl2.uLoc_Kd, matlSelect.K_diff[0], matlSelect.K_diff[1], matlSelect.K_diff[2]);
+  gl.uniform3f(this.matl2.uLoc_Ks, matlSelect.K_spec[0], matlSelect.K_spec[1], matlSelect.K_spec[2]);
+  gl.uniform1i(this.matl2.uLoc_Kshiny,  matlSelect.K_shiny); 
 
-  this.lamp2.I_pos.elements.set([g_lightPosX, g_lightPosY, g_lightPosZ]);
-  this.lamp2.I_ambi.elements.set([g_ambientR, g_ambientG, g_ambientB]); 
-  this.lamp2.I_diff.elements.set([g_diffuseR, g_diffuseG, g_diffuseB]); 
-  this.lamp2.I_spec.elements.set([g_specularR, g_specularG, g_specularB]); 
-
-  gl.uniform3fv(this.lamp2.u_pos, this.lamp2.I_pos.elements.slice(0,3));
-  gl.uniform3fv(this.lamp2.u_ambi, this.lamp2.I_ambi.elements);
-  gl.uniform3fv(this.lamp2.u_diff, this.lamp2.I_diff.elements);
-  gl.uniform3fv(this.lamp2.u_spec, this.lamp2.I_spec.elements);
+  gl.uniform3f(this.lamp2.u_pos,  g_lightPosX, g_lightPosY, g_lightPosZ);
+  gl.uniform3f(this.lamp2.u_ambi, g_ambientR, g_ambientG, g_ambientB);
+  gl.uniform3f(this.lamp2.u_diff, g_diffuseR, g_diffuseG, g_diffuseB);
+  gl.uniform3f(this.lamp2.u_spec, g_specularR, g_specularG, g_specularB);
   
   gl.uniform1i(this.u_isBlinnLoc, g_isBlinn);
-  gl.uniform3fv(this.u_eyePosWorldLoc, this.eyePosWorld);
+  gl.uniform3f(this.u_eyePosWorldLoc, g_camX, g_camY, g_camZ);
    
 }
   

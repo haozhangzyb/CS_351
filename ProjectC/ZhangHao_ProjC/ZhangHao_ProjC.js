@@ -21,7 +21,7 @@ var show_VBO_0 = 1;								// 0==Show, 1==Hide VBO0 contents on-screen.
 var show_VBO_1 = 1;								// 	"					"			VBO1		"				"				" 
 var show_VBO_2 = 0;                //  "         "     VBO2    "       "       "
 
-var matlSelect;
+
 
 var g_isBlinn = true;
 var g_islightOn = true;
@@ -68,6 +68,9 @@ var g_lookX = 12,
 var g_Theta = 180;
 var g_D = g_lookZ - g_camZ;
 var g_camMoveRate = 2.5;
+
+var matlSelNum;
+var matlSelect = new Material(matlSelNum);
 
 
 // ! Global camera control
@@ -171,7 +174,8 @@ function drawAll() {
   g_canvasID.width = window.innerWidth - 50;
   g_canvasID.height = window.innerHeight * 0.7;
 
-  matlSelect = document.getElementById('html_matlSelect').value;
+  matlSelectNum = document.getElementById('html_matlSelect').value;  
+  matlSelect.setMatl(parseInt(matlSelectNum));
 
   g_lightPosX = document.getElementById('posX').value;
   g_lightPosY = document.getElementById('posY').value;
@@ -227,16 +231,12 @@ function VBO1toggle() {
 //=============================================================================
 // Called when user presses HTML-5 button 'Show/Hide VBO1'.
   if(show_VBO_1 == 1) {
-    show_VBO_1 = 0;			// show,
-    console.log('Hide shader VBO1');
+    show_VBO_1 = 0;
     show_VBO_2 = 1;
-    console.log('Show shader VBO2');
     document.getElementById('toggleShading').innerText = "Switch from Phong Shading to Gouraud Shading";
   } else {
     show_VBO_1 = 1;
-    console.log('Show shader VBO1');
     show_VBO_2 = 0;
-    console.log('Hide shader VBO2');
     document.getElementById('toggleShading').innerText= "Switch from Gouraud Shading to Phong Shading";
   }
 }
