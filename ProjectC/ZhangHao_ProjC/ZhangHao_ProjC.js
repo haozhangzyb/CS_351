@@ -69,11 +69,10 @@ var g_Theta = 180;
 var g_D = g_lookZ - g_camZ;
 var g_camMoveRate = 2.5;
 
-var matlSelNum;
+var matlSelNum = 1;
 var matlSelect = new Material(matlSelNum);
 
 
-// ! Global camera control
 g_worldMatrix = new Matrix4();
 
 function main() {
@@ -173,9 +172,6 @@ function drawAll() {
 //=============================================================================
   g_canvasID.width = window.innerWidth - 50;
   g_canvasID.height = window.innerHeight * 0.7;
-
-  matlSelectNum = document.getElementById('html_matlSelect').value;  
-  matlSelect.setMatl(parseInt(matlSelectNum));
 
   g_lightPosX = document.getElementById('posX').value;
   g_lightPosY = document.getElementById('posY').value;
@@ -322,7 +318,7 @@ function mykeyDown(ev) {
   const D = 68;
   const W = 87;
   const S = 83;
-  const R = 82;
+  const M = 77;
   const UP_ARROW    = 38;
   const LEFT_ARROW  = 37;
   const RIGHT_ARROW = 39;
@@ -333,35 +329,36 @@ function mykeyDown(ev) {
       g_Theta -= g_camMoveRate;
 			if(g_Theta > 360) g_Theta -= 360.0;
 			if(g_Theta < 0) g_Theta += 360.0;
-
 			break;
+
 		case RIGHT_ARROW: 
 			g_Theta += g_camMoveRate;
 			if(g_Theta > 360) g_Theta -= 360.0;
 			if(g_Theta < 0) g_Theta += 360.0;
-
 			break;
+
 		case UP_ARROW:
 			g_D += moveRateRad;
 			break;
+
 		case DOWN_ARROW:
 			g_D -= moveRateRad;
-
 			break;
+
     case A:
       var xStrafe = Math.cos((g_Theta + 90) * Math.PI / 180);
       var yStrafe = Math.sin((g_Theta + 90) * Math.PI / 180);
       g_camX += xStrafe / len;
       g_camY += yStrafe / len;
-
       break;
+
     case D:
       var xStrafe = Math.cos((g_Theta + 90) * Math.PI / 180);
       var yStrafe = Math.sin((g_Theta + 90) * Math.PI / 180);
       g_camX -= xStrafe / len;
       g_camY -= yStrafe / len;
-
       break;
+
 		case W: 
 			g_lookX -= (xd / len);
 			g_lookY -= (yd / len);
@@ -369,8 +366,8 @@ function mykeyDown(ev) {
 			g_camX -= (xd / len);
 			g_camY -= (yd / len);
 			g_camZ -= (zd / len);
-
 			break;
+
 		case S: 
 			g_lookX += (xd / len);
 			g_lookY += (yd / len);
@@ -378,8 +375,14 @@ function mykeyDown(ev) {
 			g_camX += (xd / len);
 			g_camY += (yd / len);
 			g_camZ += (zd / len);
+			break;
 
-			break;      
+    case M:
+      matlSelNum = (matlSelNum + 1) % 23;
+      matlSelect.setMatl(parseInt(matlSelNum));
+      document.getElementById("webMaterialName").innerHTML = "&nbsp;&nbsp;Material: " + matlSelNum + "." + matlSelect.K_name + ".";
+      break;
+
     default:
       // Prevent the unnecessary drawing
       break;

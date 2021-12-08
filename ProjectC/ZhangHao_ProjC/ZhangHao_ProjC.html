@@ -14,41 +14,20 @@
         <button type="button" id="toggleLight" onclick="toggleLight()">
           Turn off Light
         </button> 
+
         <button type="button" id="toggleShading" onclick="VBO1toggle()">
           Switch from Gouraud Shading to Phong Shading
-        </button>        
-        <button type="button" id="toggleBlinn" onclick="toggleBlinn()">
-          Turn off Blinn-Phong Lighting
-        </button>
-        &nbsp; Material: &nbsp;
-        <select id="html_matlSelect">
-          <option value="1">Red plastic</option>
-          <option value="2">Green plastic</option>
-          <option value="3">Blue plastic</option>
-          <option value="4">Black plastic</option>
-          <option value="5">Black rubber</option>
-          <option value="6">Brass</option>
-          <option value="7">Dull bronze</option>
-          <option value="8">Shiny bronze</option>
-          <option value="9">Chrome</option>
-          <option value="10">Dull copper</option>
-          <option value="11">Shiny copper</option>
-          <option value="12">Dull gold</option>
-          <option value="13">Shiny gold</option>
-          <option value="14">Pewter</option>
-          <option value="15">Dull silver</option>
-          <option value="16">Shiny silver</option>
-          <option value="17">Emerald</option>
-          <option value="18">Jade</option>
-          <option value="19">Obsidian</option>
-          <option value="20">Pearl</option>
-          <option value="21">Ruby</option>
-          <option value="22">Turquoise</option>
-        </select>
+        </button>  
+
+        <a style="display:inline;" id="webMaterialName"> 
+          &nbsp;&nbsp; Material: 1.MATL_RED_PLASTIC.
+        </a>
+        &nbsp;Press M to change material.
       </p>
+      
 
       <p>
-        light Source Location &nbsp;
+        Light Source Location &nbsp;
         X<input type="range" min="-100" max="200" value="7" id="posX">
         Y<input type="range" min="-100" max="200" value="6" id="posY">
         Z<input type="range" min="-100" max="200" value="85" id="posZ"><br><br>
@@ -70,8 +49,7 @@
       </p>
 
       <p>
-        Press WS to zoom in and out. Press AD to strafe left and right. <br>
-        Press right, left, up, or down arrow key to change view. <br>
+        Press W/S to zoom in and out. Press A/D to strafe left and right. Press right, left, up, or down arrow key to change view. <br>
       </p>
  
     <script src="lib/webgl-utils.js"></script>
