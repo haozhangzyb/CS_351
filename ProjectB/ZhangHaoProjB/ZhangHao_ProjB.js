@@ -126,12 +126,12 @@ var projaVerts = new Float32Array([
   -c30,   -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
   // Face 2: (lower side)
   0.0,     0.0,     sq2,     1.0,     1.0,     1.0,     1.0, // Node 0
-  -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
+  -c30,   -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3
   c30,    -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
   // Face 3: (base side)
-  -c30,	-0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3 
+  -c30,	  -0.5,     0.0,     1.0,     0.0,     1.0,     0.0, // Node 3 
   0.0,     1.0,     0.0,     1.0,     1.0,     0.0,     0.0, // Node 2
-  c30,	-0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
+  c30,	  -0.5,     0.0,     1.0,     0.0,     0.0,     1.0, // Node 1
 
   c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1 (base: lower rt; red)
   0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2 (base: +y axis;  grn)
@@ -981,11 +981,11 @@ function DrawRocketHeadAndBody(gl, n, currentAngle, modelMatrix, u_ModelMatrix) 
 	gl.drawArrays(
 			gl.TRIANGLES, 
 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 0, 
-			12);
-  	gl.drawArrays(
-			gl.TRIANGLES, 
-			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 12, 
-			18);
+			30);
+  	// gl.drawArrays(
+		// 	gl.TRIANGLES, 
+		// 	(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 12, 
+		// 	18);
 }
 
 // function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
@@ -1258,18 +1258,12 @@ function DrawRocketHeadAndBody(gl, n, currentAngle, modelMatrix, u_ModelMatrix) 
 function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	var c30 = Math.sqrt(0.75); // == cos(30deg) == sqrt(3) / 2
 	var sq2 = Math.sqrt(2.0);
-	var x = [c30, 0.0, -c30];
-	var y = [-0.5, 1.0, -0.5];
-	var z = [-4.0, -4.0, -4.0];
-	var x1 = [3, 0, -3, 0]
-	var y1 = [0, 0, 0, 0]
-	var z1 = [0, -3, 0, 3]
+
 	
 
 	pushMatrix(modelMatrix);
-		var i = 1;
 		// modelMatrix.translate(x[i], y[i], z[i]); 
-		modelMatrix.translate(0, 0, z[i] - 0.9); 
+		modelMatrix.translate(0, 0, -4.9); 
 
 		//g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
 		// modelMatrix.scale(0.9, 0.9, 0.9);
@@ -1281,11 +1275,11 @@ function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 		gl.drawArrays(
 			gl.TRIANGLES, 
 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
-			36);
-		gl.drawArrays(
-			gl.TRIANGLES, 
-			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
-			12);
+			48);
+		// gl.drawArrays(
+		// 	gl.TRIANGLES, 
+		// 	(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+		// 	12);
 
 		modelMatrix.translate(transLoc01, -1.8, 0); 
 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
@@ -1298,11 +1292,7 @@ function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 		gl.drawArrays(
 			gl.TRIANGLES, 
 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
-			36);
-		gl.drawArrays(
-			gl.TRIANGLES, 
-			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
-			12);
+			48);
 
 		modelMatrix.translate(transLoc02, -1.8, 0); 
 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
@@ -1315,11 +1305,7 @@ function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 		gl.drawArrays(
 			gl.TRIANGLES, 
 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
-			36);
-		gl.drawArrays(
-			gl.TRIANGLES, 
-			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
-			12);
+			48);
 		
 		modelMatrix.translate(transLoc03, -1.8, 0); 
 		// g_modelMatrix.scale(1, 1, -1); // convert to left-handed coord sys
@@ -1332,11 +1318,7 @@ function DrawRocketEngine(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 		gl.drawArrays(
 			gl.TRIANGLES, 
 			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
-			36);
-		gl.drawArrays(
-			gl.TRIANGLES, 
-			(cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
-			12);
+			48);
 
 		modelMatrix.translate(transLoc04, -2 - sq2, 0);
 		modelMatrix.scale(2, 2, 2);
@@ -1368,14 +1350,18 @@ function DrawWindmill(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 
 //   drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
   // Draw only the last 2 triangles: start at vertex 6, draw 6 vertices
+  // gl.drawArrays(
+  //   gl.TRIANGLES, 
+  //   (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
+  //   36);
+  // gl.drawArrays(
+  //   gl.TRIANGLES, 
+  //   (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
+  //   18);
   gl.drawArrays(
     gl.TRIANGLES, 
     (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 42, 
-    36);
-  gl.drawArrays(
-    gl.TRIANGLES, 
-    (cylVerts.length + sphVerts.length + torVerts.length + gndVerts.length + axisVerts.length) / floatsPerVertex + 78, 
-    18);
+    54);
 	modelMatrix.scale(0.3, 0.3, 0.3);
 	drawAxis(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
 }

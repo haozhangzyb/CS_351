@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ZhangHao_ProjC</title>
+  </head>
+  <!-- <h1>ZhangHao_ProjC: Rocket, Windmills and Rotating Sphere</h1> -->
+  
+  <body onload="main()">
+    <canvas id="webgl" >
+      Please use a browser that supports "canvas"
+    </canvas>
+      <p>
+        <button type="button" id="toggleLight" onclick="toggleLight()">
+          Turn off Light
+        </button> 
+        <button type="button" id="toggleShading" onclick="VBO1toggle()">
+          Switch from Gouraud Shading to Phong Shading
+        </button>        
+        <button type="button" id="toggleBlinn" onclick="toggleBlinn()">
+          Turn off Blinn-Phong Lighting
+        </button>
+        &nbsp; Material: &nbsp;
+        <select id="html_matlSelect">
+          <option value="1">Red plastic</option>
+          <option value="2">Green plastic</option>
+          <option value="3">Blue plastic</option>
+          <option value="4">Black plastic</option>
+          <option value="5">Black rubber</option>
+          <option value="6">Brass</option>
+          <option value="7">Dull bronze</option>
+          <option value="8">Shiny bronze</option>
+          <option value="9">Chrome</option>
+          <option value="10">Dull copper</option>
+          <option value="11">Shiny copper</option>
+          <option value="12">Dull gold</option>
+          <option value="13">Shiny gold</option>
+          <option value="14">Pewter</option>
+          <option value="15">Dull silver</option>
+          <option value="16">Shiny silver</option>
+          <option value="17">Emerald</option>
+          <option value="18">Jade</option>
+          <option value="19">Obsidian</option>
+          <option value="20">Pearl</option>
+          <option value="21">Ruby</option>
+          <option value="22">Turquoise</option>
+        </select>
+      </p>
+
+      <p>
+        light Source Location<br>
+        X<input type="range" min="-100" max="200" value="7" id="posX">
+        Y<input type="range" min="-100" max="200" value="6" id="posY">
+        Z<input type="range" min="-100" max="200" value="85" id="posZ"><br><br>
+  
+        Ambient <br>
+        R<input type="range" min="0" max="100" value="50" id="ambiR">
+        G<input type="range" min="0" max="100" value="50" id="ambiG">
+        B<input type="range" min="0" max="100" value="50" id="ambiB"><br><br>
+      
+        Diffuse <br>
+        R<input type="range" min="0" max="100" value="50" id="diffR">
+        G<input type="range" min="0" max="100" value="50" id="diffG">
+        B<input type="range" min="0" max="100" value="50" id="diffB"><br><br>
+     
+        Specular <br>
+        R<input type="range" min="0" max="100" value="50" id="specR">
+        G<input type="range" min="0" max="100" value="50" id="specG">
+        B<input type="range" min="0" max="100" value="50" id="specB">
+      </p>
+
+      <p>
+        Press WS to zoom in and out. Press AD to strafe left and right. <br>
+        Press right, left, up, or down arrow key to change view. <br>
+      </p>
+ 
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/cuon-matrix-quat03.js"></script>
+    <script src="lib/lights-JT.js"></script>
+    <script src="lib/materials_Ayerdi04.js"></script>
+    <script src="VBObox-Lib.js"></script>
+    <script src="ZhangHao_ProjC.js"></script>
+
+  </body>
+</html>
