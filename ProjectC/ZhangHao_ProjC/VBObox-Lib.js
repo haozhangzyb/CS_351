@@ -640,36 +640,33 @@ function VBObox1() {
   precision highp float;
   precision highp int;
 
+  uniform bool u_isBlinn;
+  attribute vec4 a_Pos1;
+  attribute vec4 a_Normal;
+  varying vec4 v_Position;
+  varying vec4 v_Color;
+  varying vec3 v_Kd;
+  varying vec3 v_Normal;
+  uniform vec3 u_eyePosWorld;
 
   struct LampT {
     vec3 pos;
-    vec3 ambi; //* ambient light source strength
-    vec3 diff; //* diffuse light source strength
-    vec3 spec; //* e64 light source strength
+    vec3 ambi; 
+    vec3 diff; 
+    vec3 spec; 
   };
 
   struct MatlT {
-    vec3 emit; //* emissive - surface glow
-    vec3 ambi; //* ambient reflectance
-    vec3 diff; //* diffuse reflectance
-    vec3 spec; //* e64 reflectance
-    int shiny; //* e64 exponent
+    vec3 emit; 
+    vec3 ambi; 
+    vec3 diff; 
+    vec3 spec; 
+    int shiny; 
   };
 
   uniform LampT u_LampSet[1];
   uniform MatlT u_MatlSet[1];
   uniform mat4 u_ModelMatrix, u_NormalMatrix, u_MvpMatrix;  
-
-  uniform bool u_isBlinn;
-
-  attribute vec4 a_Pos1;
-  attribute vec4 a_Normal;
-  varying vec4 v_Position;
-  varying vec4 v_Color;
-
-  varying vec3 v_Kd;
-  varying vec3 v_Normal;
-  uniform vec3 u_eyePosWorld;
 
   void main() {
     gl_Position = u_MvpMatrix * a_Pos1;
@@ -682,21 +679,21 @@ function VBObox1() {
     vec3 lightDirection = normalize(u_LampSet[0].pos - v_Position.xyz);
     vec3 eyeDirection = normalize(u_eyePosWorld - v_Position.xyz);
     float nDotL = max(dot(lightDirection, v_Normal), 0.0);
-    float e64 = 0.0;  
+    float spec = 0.0;  
 
     if(!u_isBlinn) {
       vec3 R = reflect(-lightDirection, v_Normal);
       float specAngle = max(dot(R, eyeDirection), 0.0);
-      e64 = pow(specAngle, float(u_MatlSet[0].shiny));
+      spec = pow(specAngle, float(u_MatlSet[0].shiny));
     } else {
       vec3 H = normalize(lightDirection + eyeDirection);
       float nDotH = max(dot(H, v_Normal), 0.0);
-      e64 = pow(nDotH, float(u_MatlSet[0].shiny));
+      spec = pow(nDotH, float(u_MatlSet[0].shiny));
     }
     vec3 emissive = u_MatlSet[0].emit;
     vec3 ambient = u_LampSet[0].ambi * u_MatlSet[0].ambi;
     vec3 diffuse = u_LampSet[0].diff * v_Kd * nDotL;
-    vec3 speculr = u_LampSet[0].spec * u_MatlSet[0].spec * e64;
+    vec3 speculr = u_LampSet[0].spec * u_MatlSet[0].spec * spec;
 
   	v_Color = vec4(emissive + ambient + diffuse + speculr, 1.0);
    }`;
@@ -711,7 +708,6 @@ function VBObox1() {
   void main() {
     gl_FragColor = v_Color; 
   }`;
-
   
   makeSphere();
   makeProjBItems();
@@ -727,7 +723,6 @@ function VBObox1() {
   for(j = 0; j < projBVerts.length; i++, j++) {
     this.vboContents[i] = projBVerts[j];
   }
-
   
 	this.vboVerts = this.vboContents.length / floatsPerVertex;							// # of vertices held in 'vboContents' array;
 	this.FSIZE = this.vboContents.BYTES_PER_ELEMENT;  
@@ -760,10 +755,7 @@ function VBObox1() {
   this.u_isBlinnLoc;                // GPU location for u_isBlinnLoc uniform
 
   this.lamp1 = new LightsT();
-
-  this.matlSel;
   this.matl1 = new Material();
-
 };
 
 VBObox1.prototype.init = function() {
@@ -1021,32 +1013,32 @@ VBObox1.prototype.reload = function() {
 function VBObox2() {
     this.VERT_SRC =	//--------------------- VERTEX SHADER source code 
     glsl` 
+    precision highp float;
+    precision highp int;
 
-
-    struct MatlT {
-      vec3 emit; //* emissive - surface glow
-      vec3 ambi; //* ambient reflectance
-      vec3 diff; //* diffuse reflectance
-      vec3 spec; //* e64 reflectance
-      int shiny; //* e64 exponent
-    };
-  
     attribute vec4 a_Pos1;
     attribute vec4 a_Normal;
-
-    uniform MatlT u_MatlSet[1];
-    uniform mat4 u_ModelMatrix, u_NormalMatrix, u_MvpMatrix;
-  
     varying vec3 v_Kd;
     varying vec4 v_Position;
     varying vec3 v_Normal;
-  
+    
+    struct MatlT {
+      vec3 emit; 
+      vec3 ambi; 
+      vec3 diff; 
+      vec3 spec; 
+      int shiny; 
+    };    
+    
+    uniform MatlT u_MatlSet[1];
+    uniform mat4 u_ModelMatrix, u_NormalMatrix, u_MvpMatrix;
+    
     void main() {
       gl_Position = u_MvpMatrix * a_Pos1;
       v_Position = u_ModelMatrix * a_Pos1;
       v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
       v_Kd = u_MatlSet[0].diff;
-     }`;
+    }`;
  
     this.FRAG_SRC = //---------------------- FRAGMENT SHADER source code 
     glsl`
@@ -1054,61 +1046,52 @@ function VBObox2() {
     precision highp float;
     precision highp int;
     #endif
+    
+    uniform bool u_isBlinn;    
+    varying vec4 v_Position;    
+    varying vec3 v_Normal;
+    varying vec3 v_Kd;
+    uniform vec3 u_eyePosWorld;
 
     struct LampT {
       vec3 pos;
-      vec3 ambi; //* ambient light source strength
-      vec3 diff; //* diffuse light source strength
-      vec3 spec; //* e64 light source strength
-    };
-    
-
+      vec3 ambi; 
+      vec3 diff; 
+      vec3 spec; 
+    };    
     struct MatlT {
-      vec3 emit; //* emissive - surface glow
-      vec3 ambi; //* ambient reflectance
-      vec3 diff; //* diffuse reflectance
-      vec3 spec; //* e64 reflectance
-      int shiny; //* e64 exponent
+      vec3 emit; 
+      vec3 ambi; 
+      vec3 diff; 
+      vec3 spec; 
+      int shiny; 
     };
-
     uniform LampT u_LampSet[1];
-    uniform MatlT u_MatlSet[1];
-    uniform vec3 u_eyePosWorld;
-
-    uniform bool u_isBlinn;
-    
-    varying vec3 v_Normal;
-    varying vec4 v_Position;
-    varying vec3 v_Kd;
+    uniform MatlT u_MatlSet[1];  
 
     void main() {
-      vec3 normal = normalize(v_Normal);//
+      vec3 normal = normalize(v_Normal);
       vec3 lightDirection = normalize(u_LampSet[0].pos - v_Position.xyz);
       vec3 eyeDirection = normalize(u_eyePosWorld - v_Position.xyz);
       
       float nDotL = max(dot(lightDirection, normal), 0.0);
       vec3 H = normalize(lightDirection + eyeDirection);
-      float e64 = 0.0;
-
+      float spec = 0.0;
 
       if(!u_isBlinn) {
         vec3 R = reflect(-lightDirection, normal);
         float specAngle = max(dot(R, eyeDirection), 0.0);
-        e64 = pow(specAngle, float(u_MatlSet[0].shiny));
+        spec = pow(specAngle, float(u_MatlSet[0].shiny));
       } else {
         float nDotH = max(dot(H, normal), 0.0);
-        e64 = pow(nDotH, float(u_MatlSet[0].shiny));
-      }
-
-    
+        spec = pow(nDotH, float(u_MatlSet[0].shiny));
+      }    
       vec3 emissive = u_MatlSet[0].emit;
       vec3 ambient = u_LampSet[0].ambi * u_MatlSet[0].ambi;
       vec3 diffuse = u_LampSet[0].diff * v_Kd * nDotL;
-      vec3 speculr = u_LampSet[0].spec * u_MatlSet[0].spec * e64;
+      vec3 speculr = u_LampSet[0].spec * u_MatlSet[0].spec * spec;
       gl_FragColor = vec4(emissive + ambient + diffuse + speculr, 1.0);
     }`;
-  
-    // 
     
     makeSphere();
     makeProjBItems();
@@ -1123,8 +1106,7 @@ function VBObox2() {
     projBStart = i;
     for(j = 0; j < projBVerts.length; i++, j++) {
       this.vboContents[i] = projBVerts[j];
-    }
-  
+    }  
 
     this.vboVerts = this.vboContents.length / floatsPerVertex;							// # of vertices held in 'vboContents' array;
     this.FSIZE = this.vboContents.BYTES_PER_ELEMENT;  
@@ -1151,16 +1133,12 @@ function VBObox2() {
 
     this.u_NormalMatrixLoc;           // GPU location for u_NormalMatrix uniform
     this.u_ModelMatrixLoc;						// GPU location for u_ModelMatrix uniform
-    this.u_MvpMatrixLoc;
-    this.u_eyePosWorldLoc;
-    this.u_isBlinnLoc;
-
+    this.u_MvpMatrixLoc;              // GPU location for u_MvpMatrixLoc uniform
+    this.u_eyePosWorldLoc;            // GPU location for u_eyePosWorldLoc uniform
+    this.u_isBlinnLoc;                // GPU location for u_isBlinnLoc uniform
     
     this.lamp2 = new LightsT();
-
-    this.matlSel;
-    this.matl2 = new Material();
-    
+    this.matl2 = new Material();   
   };
 
   
@@ -1201,23 +1179,12 @@ function VBObox2() {
     }
     
     // c2) Find All Uniforms:-----------------------------------------------------
-    //Get GPU storage location for each uniform var used in our shader programs: 
+    //Get GPU storage location for each uniform var used in our shader programs:    
+    this.u_ModelMatrixLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMatrix'); 
+    this.u_NormalMatrixLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMatrix');
+    this.u_MvpMatrixLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMatrix'); 
     this.u_isBlinnLoc = gl.getUniformLocation(this.shaderLoc, 'u_isBlinn');
     this.u_eyePosWorldLoc = gl.getUniformLocation(this.shaderLoc, 'u_eyePosWorld');
-    this.u_MvpMatrixLoc = gl.getUniformLocation(this.shaderLoc, 'u_MvpMatrix');
-    
-    this.u_ModelMatrixLoc = gl.getUniformLocation(this.shaderLoc, 'u_ModelMatrix');
-    if (!this.u_ModelMatrixLoc) { 
-      console.log(this.constructor.name + 
-                  '.init() failed to get GPU location for u_ModelMatrix uniform');
-      return;
-    }
-    
-    this.u_NormalMatrixLoc = gl.getUniformLocation(this.shaderLoc, 'u_NormalMatrix');
-    if(!this.u_NormalMatrixLoc) {
-      console.log('Failed to get GPU storage location for u_NormalMatrix');
-      return
-    }
 
     if (!this.u_ModelMatrixLoc || !this.u_MvpMatrixLoc 
     || !this.u_NormalMatrixLoc || !this.u_eyePosWorldLoc) {
