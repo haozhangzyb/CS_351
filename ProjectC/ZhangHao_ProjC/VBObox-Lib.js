@@ -323,12 +323,12 @@ function makeGroundGrid() {
 
     for(v=0, j=0; v<2*xcount; v++, j+= floatsPerVertex) {
       if(v%2==0) {	// put even-numbered vertices at (xnow, -xymax, 0)
-        gndVerts[j  ] = -xymax + (v  )*xgap;	// x
+        gndVerts[j]   = -xymax + (v  )*xgap;	// x
         gndVerts[j+1] = -xymax;								// y
         gndVerts[j+2] = 0.0;									// z
       }
       else {				// put odd-numbered vertices at (xnow, +xymax, 0).
-        gndVerts[j  ] = -xymax + (v-1)*xgap;	// x
+        gndVerts[j]   = -xymax + (v-1)*xgap;	// x
         gndVerts[j+1] = xymax;								// y
         gndVerts[j+2] = 0.0;									// z
       }
@@ -340,12 +340,12 @@ function makeGroundGrid() {
     // (don't re-initialize j--we're adding more vertices to the array)
     for(v=0; v<2*ycount; v++, j+= floatsPerVertex) {
       if(v%2==0) {		// put even-numbered vertices at (-xymax, ynow, 0)
-        gndVerts[j  ] = -xymax;								// x
+        gndVerts[j]   = -xymax;								// x
         gndVerts[j+1] = -xymax + (v  )*ygap;	// y
         gndVerts[j+2] = 0.0;									// z
       }
       else {					// put odd-numbered vertices at (+xymax, ynow, 0).
-        gndVerts[j  ] = xymax;								// x
+        gndVerts[j]   = xymax;								// x
         gndVerts[j+1] = -xymax + (v-1)*ygap;	// y
         gndVerts[j+2] = 0.0;									// z
       }
@@ -1075,7 +1075,6 @@ function VBObox2() {
       vec3 eyeDirection = normalize(u_eyePosWorld - v_Position.xyz);
       
       float nDotL = max(dot(lightDirection, normal), 0.0);
-      vec3 H = normalize(lightDirection + eyeDirection);
       float spec = 0.0;
 
       if(!u_isBlinn) {
@@ -1083,6 +1082,7 @@ function VBObox2() {
         float specAngle = max(dot(R, eyeDirection), 0.0);
         spec = pow(specAngle, float(u_MatlSet[0].shiny));
       } else {
+        vec3 H = normalize(lightDirection + eyeDirection);
         float nDotH = max(dot(H, normal), 0.0);
         spec = pow(nDotH, float(u_MatlSet[0].shiny));
       }    
